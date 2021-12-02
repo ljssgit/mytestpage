@@ -4,12 +4,13 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <script>
 var BPM = 100;
+var MODE = 0;
 var timerid = null;
 var nm_list = ["note", "chordtone", "tension", "form"]
 var note_list = ["C", "C#(Db)", "D", "D#(Eb)", "E", "F", "F#(Gb)", "G", "G#(Ab)", "A", "A#(Bb)", "B"];
 var chordtone_list = ["7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
 var tension_list = ["b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
-var form_list = [" [A form]", " [B form]"]
+var form_list = [" [1전위]", " [2전위]", " [3전위]"]
 var major_scale = [2, 2, 1, 2, 2, 2, 1];
 //var piano_audioes = [];
 
@@ -91,11 +92,15 @@ function chordtone(chord_nm) {
 }
 
 // ids = [note_ids, add_ids, tension_ids, form_ids]
-function chord_generate(ids) {
+function rand_chord_generate() {
     var list = [note_list, chordtone_list, tension_list, form_list]
     var chord = "";
-
+    var ids = [[], [], [], []]
     for (i in ids) {
+        chks = document.getElementsByName("chk_"+ nm_list[i]);
+        for (j in chks)
+            if (chks[j].checked)
+                ids[i].push(j);
         if (ids[i].length==0) continue;
         if (i==0) {
             rand_idx = Math.random()*ids[i].length;
@@ -111,17 +116,8 @@ function chord_generate(ids) {
     return chord
 }
 
-function print_rand_chord() {
-    var ids = [[], [], [], []]
-
-    for (i in ids) {
-        chks = document.getElementsByName("chk_"+ nm_list[i]);
-        for (j in chks)
-            if (chks[j].checked)
-                ids[i].push(j);
-    }
-
-    chord = chord_generate(ids);
+function print_rand_chord(mark_piano_yn) {
+    chord = rand_chord_generate();
     chord_text = chord;
     if (chord_text.length > 1 && chord_text[1] == "#") {
         if (Math.random() < 0.5)
@@ -133,18 +129,19 @@ function print_rand_chord() {
     document.getElementById("chord").innerHTML = chord_text;
     cdtone = chordtone(chord);
     document.getElementById("chordtone").innerHTML = num2note(cdtone).toString();
-    mark_piano(cdtone);
+    if (mark_piano_yn) {
+        mark_piano(cdtone);
+    }
+
+    return cdtone;
 }
 
 function auto_print_chord(flag) {
-    if (!flag) {
-        clearInterval(timerid);
-        return;
-    }
-
     clearInterval(timerid);
-    print_rand_chord();
-    timerid = setInterval(print_rand_chord, 1000*60*4/BPM);
+    if (flag) {
+        print_rand_chord(true);
+        timerid = setInterval(print_rand_chord, 1000*60*4/BPM, true);
+    }
     //return auto_print_chord(flag);
 }
 
@@ -235,7 +232,16 @@ function init_setting() {
     chks = document.getElementsByName("chk_tension");
     for (j in chks) chks[j].checked = false;
 
+    // 피아노 사이즈 설정
     set_piano_size(2);
+
+    // 이벤트 리스너 설정
+    document.querySelector('#next_btn').addEventListener('click',function(){
+        if (MODE == 0) {auto_print_chord(true);}
+        else if (MODE == 1) {print_rand_chord(true);}
+        else if (MODE == 2) {print_rand_chord(false);}
+        else {alert("오류 !");}
+    });
 }
 
 //건반 크기 조정
@@ -250,20 +256,42 @@ function set_piano_size(ratio) {
     changecss(".black_key", "left",((key_size[1]-key_size[3]*0.5)*ratio+1)+"px");
 }
 
+function change_mode(mode) {
+    MODE = mode;
+    // 모드 0: 자동 코드
+    if (mode == 0) {
+        setBPM();
+    }
+    else {
+        auto_print_chord(false);
+
+        // 모드 1: 수동 코드
+        if (mode == 1) {
+
+        }
+        // 모드 2: 맞추기
+        else if (mode == 2) {
+            print_rand_chord(false);
+        }
+    }
+}
+
 function setBPM() {
     BPM = document.getElementById("bpm").value;
-    auto_print_chord(false);
+
     auto_print_chord(true);
 }
 
 function setting_display(flag) {
     if (flag) {
         document.getElementById("setting_btn").style.display = "none";
+        document.getElementById("next_btn").style.display = "none";
         document.getElementById("setting").style.display = "block";
     }
     else {
-    document.getElementById("setting").style.display = "none";
+        document.getElementById("setting").style.display = "none";
         document.getElementById("setting_btn").style.display = "block";
+        document.getElementById("next_btn").style.display = "block";
     }
 }
 
@@ -277,7 +305,6 @@ window.onload = function() {
     // chord = "DmM7 [A form]"
     // ct = num2note(chordtone(chord));
     // dv.innerHTML += chord + ct.toString() + "<br/>";
-
     init_setting();
     setBPM();
 }
@@ -302,6 +329,7 @@ window.onload = function() {
     padding:10px 20px 20px 20px;
     border-radius: 15px;
     right:0;
+    /*float:right;*/
     display:block;
     position:absolute;
 }
@@ -364,10 +392,12 @@ window.onload = function() {
 </head>
 <body style="font-size:x-large;margin:0">
     <a id="setting_btn" class="setting_btn" onclick="setting_display(true)">setting</a>
+    <a id="next_btn" class="setting_btn" style="top:65px">Next</a>
     <div id ="setting">
         <div style="display:block;position:absolute;right:20px;font-weight:bold" onclick="setting_display(false)">X</div>
         <input type="text" id="bpm" value="50" style="width:150px;height:50px;font-size:xx-large;text-align:center;"/>
-        <input type="button" onclick="setBPM()" style="width:150px;height:50px;font-size:xx-large;" value="BPM적용"/>
+        <button onclick="setBPM()" style="width:150px;height:50px;font-size:xx-large;">BPM적용</button>
+        <!--<input type="button" onclick="setBPM()" style="width:150px;height:50px;font-size:xx-large;" value="BPM적용"/>-->
         <br/>
     </div>
     <div id="chord" style="font-size:xxx-large;text-align:center">
