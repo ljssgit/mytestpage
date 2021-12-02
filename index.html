@@ -10,8 +10,10 @@ var nm_list = ["note", "chordtone", "tension", "form"]
 var note_list = ["C", "C#(Db)", "D", "D#(Eb)", "E", "F", "F#(Gb)", "G", "G#(Ab)", "A", "A#(Bb)", "B"];
 var chordtone_list = ["7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
 var tension_list = ["b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
-var form_list = [" [1전위]", " [2전위]", " [3전위]"]
+var form_list = [" [1전위]", " [2전위]"]
 var major_scale = [2, 2, 1, 2, 2, 2, 1];
+
+var piano_octave = [2, 3, 4];
 //var piano_audioes = [];
 
 function make_scale(note) {
@@ -84,9 +86,13 @@ function chordtone(chord_nm) {
     // ===== tension 미추가 =====
 
     // 전위
-    for (var i in form_list)
-        if (chord_nm.indexOf(form_list[i]) > -1)
-            result.splice(1, 0, result.pop());
+    form_list.reverse();
+    result.splice(1, 0, result.pop());
+    for (var i in form_list) {
+        if (chord_nm.indexOf(form_list[i]) > -1) break;
+        result.splice(1, 0, result.pop());
+    }
+    form_list.reverse();
 
     return result;
 }
@@ -160,14 +166,14 @@ function mark_piano(chordtone) {
     }
 
     for (i in ct) {
-        class_name = " selected_key";
-        if (i==0) class_name = " selected_root_key";
-        document.getElementById(ct[i]).className += class_name;
+        if (i==0) key_select(document.getElementById(ct[i]), true);
+        else key_select(document.getElementById(ct[i]), false);
     }
 }
 
 function clear_piano() {
-    for(oct=2;oct<=4;oct++) {
+    for(i in piano_octave) {
+        oct = piano_octave[i];
         for(i in note_list) {
             class_name = document.getElementById(note_list[i]+oct).className.split(" ");
             if (class_name.length > 1)
@@ -214,10 +220,49 @@ function getAudios() {
 
 }
 
+function key_select(key_element, is_root) {
+    if (key_element.className.split(" ").length > 1) {
+        key_element.className = key_element.className.split(" ")[0];
+    }
+    else {
+        class_name = " selected_key";
+        if (i==0) class_name = " selected_root_key";
+        key_element.className += class_name;
+    }
+}
+
+function is_correct() {
+    ct = document.getElementById("chordtone").innerText.split(",");
+    select_list = []
+
+    for (i in piano_octave)
+        for (j in note_list)
+            if (document.getElementById(note_list[j]+piano_octave[i]).className.split(" ").length > 1)
+                select_list.push(note_list[j])
+
+    if (select_list.length != ct.length) return false;
+
+    for (i in ct)
+        if (ct[i] != select_list[i]) return false;
+
+    // for (i in ct) {
+    //     for (j in piano_octave) {
+    //         if (document.getElementById(ct[i]+piano_octave[j]).className.split(" ").length > 1) {
+    //             if (j < select_list[select_list.length-1]) return false;
+    //             select_list.push(j);
+    //             break;
+    //         }
+    //     }
+    // }
+    // if (select_list.length < ct.length) return false;
+
+    return true;
+}
+
 function init_setting() {
     list = [note_list, chordtone_list, tension_list, form_list]
 
-    //생성
+    //setting 생성
     set_div = document.getElementById("setting");
     for (i in list) {
         for (j in list[i]) set_div.innerHTML +=
@@ -228,19 +273,56 @@ function init_setting() {
         set_div.innerHTML += "<br/>";
     }
 
+    //piano 생성
+    piano = document.getElementById("piano");
+    for (i in piano_octave) {
+        for (j in note_list) {
+            var key = document.createElement("div");
+            key.setAttribute("id", note_list[j]+piano_octave[i]);
+            key.setAttribute("selected", false);
+            if(note_list[j].length == 1) {
+                key.setAttribute("class", "white_key");
+                piano.appendChild(key);
+            }
+            else {
+                key.setAttribute("class", "black_key");
+                piano.lastChild.appendChild(key);
+                //piano.innerHTML += "<div id='"+ note_list[j] + octave[i]+"' class='white_key'>";
+            }
+        }
+
+        set_div.innerHTML += "<br/>";
+    }
+
+    // 피아노 사이즈 설정
+    set_piano_size(2);
+
     //초기값설정
     chks = document.getElementsByName("chk_tension");
     for (j in chks) chks[j].checked = false;
 
-    // 피아노 사이즈 설정
-    set_piano_size(2);
 
     // 이벤트 리스너 설정
     document.querySelector('#next_btn').addEventListener('click',function(){
         if (MODE == 0) {auto_print_chord(true);}
         else if (MODE == 1) {print_rand_chord(true);}
-        else if (MODE == 2) {print_rand_chord(false);}
+        else if (MODE == 2) {clear_piano();print_rand_chord(false);}
         else {alert("오류 !");}
+    });
+    document.getElementsByName("mode").forEach((radio) => {
+        radio.addEventListener('change',function(){
+            change_mode(this.value);
+        })
+    });
+    piano.addEventListener('click',function(e){
+        if (MODE == 2) {
+            key_select(e.target, false);
+            if (is_correct()) {
+                setTimeout(
+                    function(){clear_piano();print_rand_chord(false);}
+                    , 500);
+            }
+        }
     });
 }
 
@@ -260,6 +342,8 @@ function change_mode(mode) {
     MODE = mode;
     // 모드 0: 자동 코드
     if (mode == 0) {
+        document.getElementById("chordtone").style.display = "block";
+        console.log("자동 모드 전환");
         setBPM();
     }
     else {
@@ -267,10 +351,14 @@ function change_mode(mode) {
 
         // 모드 1: 수동 코드
         if (mode == 1) {
-
+            document.getElementById("chordtone").style.display = "block";
+            console.log("수동 모드 전환");
         }
         // 모드 2: 맞추기
         else if (mode == 2) {
+            document.getElementById("chordtone").style.display = "none";
+            console.log("맞추기 모드 전환");
+            clear_piano();
             print_rand_chord(false);
         }
     }
@@ -279,7 +367,8 @@ function change_mode(mode) {
 function setBPM() {
     BPM = document.getElementById("bpm").value;
 
-    auto_print_chord(true);
+    if (MODE==0)
+        auto_print_chord(true);
 }
 
 function setting_display(flag) {
@@ -310,6 +399,7 @@ window.onload = function() {
 }
 </script>
 <style>
+
 .label_set {
     background-color:#1F51B7;
     color:white;
@@ -392,9 +482,20 @@ window.onload = function() {
 </head>
 <body style="font-size:x-large;margin:0">
     <a id="setting_btn" class="setting_btn" onclick="setting_display(true)">setting</a>
-    <a id="next_btn" class="setting_btn" style="top:65px">Next</a>
+    <a id="next_btn" class="setting_btn" style="right:124px">Next</a>
     <div id ="setting">
-        <div style="display:block;position:absolute;right:20px;font-weight:bold" onclick="setting_display(false)">X</div>
+        <div style="display:block;position:absolute;right:20px;font-weight:bold"font-size:xxx-large; onclick="setting_display(false)">X</div>
+        <p style="font-size:xx-large;margin-top:0px;">
+            <label for="mode_0">
+                <input type="radio" name="mode" id="mode_0" value="0" class="chk" checked="checked"/> 자동
+            </label>
+            <label for="mode_1">
+                <input type="radio" name="mode" id="mode_1" value="1" class="chk"/> 수동
+            </label>
+            <label for="mode_2">
+                <input type="radio" name="mode" id="mode_2" value="2" class="chk"/> 맞추기
+            </label>
+        </p>
         <input type="text" id="bpm" value="50" style="width:150px;height:50px;font-size:xx-large;text-align:center;"/>
         <button onclick="setBPM()" style="width:150px;height:50px;font-size:xx-large;">BPM적용</button>
         <!--<input type="button" onclick="setBPM()" style="width:150px;height:50px;font-size:xx-large;" value="BPM적용"/>-->
@@ -406,57 +507,6 @@ window.onload = function() {
     </div>
     <br/>
     <div id="piano">
-        <div id="C2" class="white_key">
-            <div id="C#(Db)2" class="black_key"></div>
-        </div>
-        <div id="D2" class="white_key">
-            <div id="D#(Eb)2" class="black_key"></div>
-        </div>
-        <div id="E2" class="white_key"></div>
-        <div id="F2" class="white_key">
-            <div id="F#(Gb)2" class="black_key"></div>
-        </div>
-        <div id="G2" class="white_key">
-            <div id="G#(Ab)2" class="black_key"></div>
-        </div>
-        <div id="A2" class="white_key">
-            <div id="A#(Bb)2" class="black_key"></div>
-        </div>
-        <div id="B2" class="white_key"></div>
-        <div id="C3" class="white_key">
-            <div id="C#(Db)3" class="black_key"></div>
-        </div>
-        <div id="D3" class="white_key">
-            <div id="D#(Eb)3" class="black_key"></div>
-        </div>
-        <div id="E3" class="white_key"></div>
-        <div id="F3" class="white_key">
-            <div id="F#(Gb)3" class="black_key"></div>
-        </div>
-        <div id="G3" class="white_key">
-            <div id="G#(Ab)3" class="black_key"></div>
-        </div>
-        <div id="A3" class="white_key">
-            <div id="A#(Bb)3" class="black_key"></div>
-        </div>
-        <div id="B3" class="white_key"></div>
-        <div id="C4" class="white_key">
-            <div id="C#(Db)4" class="black_key"></div>
-        </div>
-        <div id="D4" class="white_key">
-            <div id="D#(Eb)4" class="black_key"></div>
-        </div>
-        <div id="E4" class="white_key"></div>
-        <div id="F4" class="white_key">
-            <div id="F#(Gb)4" class="black_key"></div>
-        </div>
-        <div id="G4" class="white_key">
-            <div id="G#(Ab)4" class="black_key"></div>
-        </div>
-        <div id="A4" class="white_key">
-            <div id="A#(Bb)4" class="black_key"></div>
-        </div>
-        <div id="B4" class="white_key"></div>
     </div>
 </body>
 </html>
