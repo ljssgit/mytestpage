@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script>
+var BPM = 100;
+var timerid = null;
+var nm_list = ["note", "chordtone", "tension", "form"]
+var note_list = ["C", "C#(Db)", "D", "D#(Eb)", "E", "F", "F#(Gb)", "G", "G#(Ab)", "A", "A#(Bb)", "B"];
+var chordtone_list = ["7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
+var tension_list = ["b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
+var form_list = [" [A form]", " [B form]"]
+var major_scale = [2, 2, 1, 2, 2, 2, 1];
+//var piano_audioes = [];
+
+function make_scale(note) {
+    octave = [];
+    note = note2num(note);
+
+    octave.push(note);
+    for (var i in major_scale) {
+        num = (octave[octave.length-1]+major_scale[i])%12;
+        octave.push(num);
+    }
+    octave.pop();
+
+    return octave;
+}
+
+function num2note(num) {
+    if (num instanceof Array) {
+        var name_list = []
+        for (var i in num)
+            name_list.push(note_list[num[i]]);
+
+        return name_list;
+    }
+
+    return note_list[num];
+}
+
+function note2num(note) {
+    if(typeof note == "string")
+        return note_list.indexOf(note);
+
+    return note;
+}
+
+function chordtone(chord_nm) {
+    result = [];
+
+    // 코드 한개짜리 tension 추가
+    split_nm = chord_nm.split(" [")[0];
+    if (split_nm.length == 1 || (split_nm[1] == "#" && split_nm.length == 6)) {
+        num = note2num(split_nm);
+        result.push(num, (num+2)%12, (num+4)%12, (num+7)%12);
+    }
+    else {
+        // 근음 추가
+        num = -1;
+        if (chord_nm.length > 1 && chord_nm[1] == "#")
+             num = note2num(chord_nm.substr(0,6));
+        else num = note2num(chord_nm[0]);
+        result.push(num);
+
+        // 코드톤 추가
+        for (var i=chordtone_list.length-1;i>=0;i--) {
+            add_name = chordtone_list[i]
+            if (chord_nm.indexOf(add_name) > -1) {
+                if      (add_name == "7"     )  result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "m7"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "M7"    )  result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
+                else if (add_name == "mM7"   )  result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
+                else if (add_name == "7sus4" )  result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "m6"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
+                else if (add_name == "dim7"  )  result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
+                else if (add_name == "m7(b5)")  result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
+                break;
+            }
+        }
+    }
+
+    // ===== tension 미추가 =====
+
+    // 전위
+    for (var i in form_list)
+        if (chord_nm.indexOf(form_list[i]) > -1)
+            result.splice(1, 0, result.pop());
+
+    return result;
+}
+
+// ids = [note_ids, add_ids, tension_ids, form_ids]
+function chord_generate(ids) {
+    var list = [note_list, chordtone_list, tension_list, form_list]
+    var chord = "";
+
+    for (i in ids) {
+        if (ids[i].length==0) continue;
+        if (i==0) {
+            rand_idx = Math.random()*ids[i].length;
+            chord += list[i][ids[i][parseInt(rand_idx)]];
+        }
+        else {
+            rand_idx = Math.random()*(ids[i].length+1);
+            if (parseInt(rand_idx) < ids[i].length)
+                chord += list[i][ids[i][parseInt(rand_idx)]];
+        }
+    }
+
+    return chord
+}
+
+function print_rand_chord() {
+    var ids = [[], [], [], []]
+
+    for (i in ids) {
+        chks = document.getElementsByName("chk_"+ nm_list[i]);
+        for (j in chks)
+            if (chks[j].checked)
+                ids[i].push(j);
+    }
+
+    chord = chord_generate(ids);
+    chord_text = chord;
+    if (chord_text.length > 1 && chord_text[1] == "#") {
+        if (Math.random() < 0.5)
+            chord_text = chord_text.substr(0,2) + chord_text.substr(6)
+        else
+            chord_text = chord_text.substr(3,2) + chord_text.substr(6)
+    }
+
+    document.getElementById("chord").innerHTML = chord_text;
+    cdtone = chordtone(chord);
+    document.getElementById("chordtone").innerHTML = num2note(cdtone).toString();
+    mark_piano(cdtone);
+}
+
+function auto_print_chord(flag) {
+    if (!flag) {
+        clearInterval(timerid);
+        return;
+    }
+
+    clearInterval(timerid);
+    print_rand_chord();
+    timerid = setInterval(print_rand_chord, 1000*60*4/BPM);
+    //return auto_print_chord(flag);
+}
+
+function mark_piano(chordtone) {
+    clear_piano();
+    ct = [];
+    oct = 3;
+    for (i in chordtone) {
+        if (i > 0 && chordtone[i-1] > chordtone[i]) oct++;
+        if (oct > 4) {
+            oct--;
+            for (j=0;j<i;j++)
+                ct[j] = ct[j].substr(0,ct[j].length-1)+(parseInt(ct[j][ct[j].length-1])-1);
+        }
+        ct.push(note_list[chordtone[i]]+oct);
+    }
+
+    for (i in ct) {
+        class_name = " selected_key";
+        if (i==0) class_name = " selected_root_key";
+        document.getElementById(ct[i]).className += class_name;
+    }
+}
+
+function clear_piano() {
+    for(oct=2;oct<=4;oct++) {
+        for(i in note_list) {
+            class_name = document.getElementById(note_list[i]+oct).className.split(" ");
+            if (class_name.length > 1)
+                document.getElementById(note_list[i]+oct).className = class_name[0];
+        }
+    }
+}
+
+function changecss(theClass,element,value) {
+    //Last Updated on July 4, 2011
+    //documentation for this script at
+    //http://www.shawnolson.net/a/503/altering-css-class-attributes-with-javascript.html
+    var cssRules;
+
+    for (var S = 0; S < document.styleSheets.length; S++){
+        try{
+            document.styleSheets[S].insertRule(theClass+' { '+element+': '+value+'; }',document.styleSheets[S][cssRules].length);
+        } catch(err){
+            try{document.styleSheets[S].addRule(theClass,element+': '+value+';');
+            } catch(err){
+                try{
+                    if (document.styleSheets[S]['rules']) {
+                        cssRules = 'rules';
+                    } else if (document.styleSheets[S]['cssRules']) {
+                        cssRules = 'cssRules';
+                    } else {
+                        //no rules found... browser unknown
+                    }
+                    for (var R = 0; R < document.styleSheets[S][cssRules].length; R++) {
+                        if (document.styleSheets[S][cssRules][R].selectorText == theClass) {
+                            if(document.styleSheets[S][cssRules][R].style[element]){
+                                document.styleSheets[S][cssRules][R].style[element] = value;
+                                break;
+                            }
+                        }
+                    }
+                } catch (err){}
+            }
+        }
+    }
+}
+
+function getAudios() {
+
+}
+
+function init_setting() {
+    list = [note_list, chordtone_list, tension_list, form_list]
+
+    //생성
+    set_div = document.getElementById("setting");
+    for (i in list) {
+        for (j in list[i]) set_div.innerHTML +=
+        "<label for='chk_"+ nm_list[i]+"_"+j +"' class='label_set'>"
+        + "<input type='checkbox' class='chk' name='chk_"+nm_list[i]+"' value='"+j+"' id='chk_"+ nm_list[i]+"_"+j +"' checked='checked'> "
+        + list[i][j] + "</label> "
+        ;
+        set_div.innerHTML += "<br/>";
+    }
+
+    //초기값설정
+    chks = document.getElementsByName("chk_tension");
+    for (j in chks) chks[j].checked = false;
+
+    set_piano_size(2);
+}
+
+//건반 크기 조정
+function set_piano_size(ratio) {
+    //key_size = [135, 21, 85, 10];
+    var key_size = [135, 21, 85, 11];
+
+    changecss(".white_key", "height",(key_size[0]*ratio)+"px");
+    changecss(".white_key", "width",(key_size[1]*ratio)+"px");
+    changecss(".black_key", "height",(key_size[2]*ratio)+"px");
+    changecss(".black_key", "width",(key_size[3]*ratio)+"px");
+    changecss(".black_key", "left",((key_size[1]-key_size[3]*0.5)*ratio+1)+"px");
+}
+
+function setBPM() {
+    BPM = document.getElementById("bpm").value;
+    auto_print_chord(false);
+    auto_print_chord(true);
+}
+
+function setting_display(flag) {
+    if (flag) {
+        document.getElementById("setting_btn").style.display = "none";
+        document.getElementById("setting").style.display = "block";
+    }
+    else {
+    document.getElementById("setting").style.display = "none";
+        document.getElementById("setting_btn").style.display = "block";
+    }
+}
+
+window.onload = function() {
+    // oct = make_scale("C");
+    // nm = num2note(oct);
+    //
+    // dv = document.getElementById("chord");
+    // dv.innerHTML = "C Major Scale : " + nm.toString() + "<br/>";
+    //
+    // chord = "DmM7 [A form]"
+    // ct = num2note(chordtone(chord));
+    // dv.innerHTML += chord + ct.toString() + "<br/>";
+
+    init_setting();
+    setBPM();
+}
+</script>
+<style>
+.label_set {
+    background-color:#1F51B7;
+    color:white;
+    padding:10px;
+    margin:5px 0 5px 0;
+    display:inline-block;
+    border-radius: 15px;
+}
+.chk {
+    width:25px;
+    height:25px;
+}
+.setting_btn {
+    font-weight:bold;
+    background-color:#1F51B7;
+    color:white;
+    padding:10px 20px 20px 20px;
+    border-radius: 15px;
+    right:0;
+    display:block;
+    position:absolute;
+}
+.white_key {
+    padding:0;
+    margin:0;
+    border:1px solid black;
+    display:block;
+    float:left;
+    /* 표준
+    height:140~150px;
+    width:23.5px; */
+    /* 집
+    height:13.5;
+    width:2.1px;
+    */
+    height:100px;
+    width:20px; */
+}
+.black_key {
+    padding:0;
+    margin:0;
+    border:1px solid black;
+    background-color: black;
+    display:block;
+    position:relative;
+
+    height:50px;
+    width:5px;
+    /* 표준
+    height:95px;
+    width:9~11px; */
+    /* 집
+    height:8.5px;
+    width:1px;
+    */
+}
+.selected_key {
+    background-color: #FFA648;
+}
+.selected_root_key {
+    background-color: #368AFF;
+}
+#piano {
+    /* display:grid;
+    place-content:center; */
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    /* left: 25%; */
+    /* transform: translateX(-50%); */
+}
+#setting {
+    border-radius: 0 0 15px 15px;
+    background-color:#B2CCFF;
+    padding:20px;
+    display:none;
+}
+</style>
+</head>
+<body style="font-size:x-large;margin:0">
+    <a id="setting_btn" class="setting_btn" onclick="setting_display(true)">setting</a>
+    <div id ="setting">
+        <div style="display:block;position:absolute;right:20px;font-weight:bold" onclick="setting_display(false)">X</div>
+        <input type="text" id="bpm" value="50" style="width:150px;height:50px;font-size:xx-large;text-align:center;"/>
+        <input type="button" onclick="setBPM()" style="width:150px;height:50px;font-size:xx-large;" value="BPM적용"/>
+        <br/>
+    </div>
+    <div id="chord" style="font-size:xxx-large;text-align:center">
+    </div>
+    <div id="chordtone" style="font-size:x-large;text-align:center">
+    </div>
+    <br/>
+    <div id="piano">
+        <div id="C2" class="white_key">
+            <div id="C#(Db)2" class="black_key"></div>
+        </div>
+        <div id="D2" class="white_key">
+            <div id="D#(Eb)2" class="black_key"></div>
+        </div>
+        <div id="E2" class="white_key"></div>
+        <div id="F2" class="white_key">
+            <div id="F#(Gb)2" class="black_key"></div>
+        </div>
+        <div id="G2" class="white_key">
+            <div id="G#(Ab)2" class="black_key"></div>
+        </div>
+        <div id="A2" class="white_key">
+            <div id="A#(Bb)2" class="black_key"></div>
+        </div>
+        <div id="B2" class="white_key"></div>
+        <div id="C3" class="white_key">
+            <div id="C#(Db)3" class="black_key"></div>
+        </div>
+        <div id="D3" class="white_key">
+            <div id="D#(Eb)3" class="black_key"></div>
+        </div>
+        <div id="E3" class="white_key"></div>
+        <div id="F3" class="white_key">
+            <div id="F#(Gb)3" class="black_key"></div>
+        </div>
+        <div id="G3" class="white_key">
+            <div id="G#(Ab)3" class="black_key"></div>
+        </div>
+        <div id="A3" class="white_key">
+            <div id="A#(Bb)3" class="black_key"></div>
+        </div>
+        <div id="B3" class="white_key"></div>
+        <div id="C4" class="white_key">
+            <div id="C#(Db)4" class="black_key"></div>
+        </div>
+        <div id="D4" class="white_key">
+            <div id="D#(Eb)4" class="black_key"></div>
+        </div>
+        <div id="E4" class="white_key"></div>
+        <div id="F4" class="white_key">
+            <div id="F#(Gb)4" class="black_key"></div>
+        </div>
+        <div id="G4" class="white_key">
+            <div id="G#(Ab)4" class="black_key"></div>
+        </div>
+        <div id="A4" class="white_key">
+            <div id="A#(Bb)4" class="black_key"></div>
+        </div>
+        <div id="B4" class="white_key"></div>
+    </div>
+</body>
+</html>
