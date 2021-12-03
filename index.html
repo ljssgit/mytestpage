@@ -156,8 +156,9 @@ class Piano {
         }
 
         for (i in this.keys) {
-            let fnm = this.keys[i].replace(/\#\(.*\)/, "");
-            let sound = new Audio("./files/"+fnm+".ogg");
+            let fnm = this.keys[i].replace(/\#\(.*\)/, "").toLowerCase();
+            //let sound = new Audio("files/"+fnm+".ogg");
+            let sound = new Audio("https://raw.githubusercontent.com/ljssgit/mytestpage/main/files/"+fnm+".ogg");
             sound.loop=false;
             this.sounds.push(sound);
         }
@@ -559,13 +560,13 @@ window.onload = function() {
         <div style="display:block;position:absolute;right:20px;font-weight:bold"font-size:xxx-large; onclick="setting_display(false)">X</div>
         <p style="font-size:xx-large;margin-top:0px;">
             <label for="mode_0">
-                <input type="radio" name="mode" id="mode_0" value="0" class="chk" checked="checked"/> 자동
+                <input type="radio" name="mode" id="mode_0" value="0" class="chk"/> 자동
             </label>
             <label for="mode_1">
                 <input type="radio" name="mode" id="mode_1" value="1" class="chk"/> 수동
             </label>
             <label for="mode_2">
-                <input type="radio" name="mode" id="mode_2" value="2" class="chk"/> 맞추기
+                <input type="radio" name="mode" id="mode_2" value="2" class="chk" checked="checked"/> 맞추기
             </label>
         </p>
         <input type="text" id="bpm" value="50" style="width:150px;height:50px;font-size:xx-large;text-align:center;"/>
@@ -583,6 +584,5 @@ window.onload = function() {
     <br/>
     <div id="piano">
     </div>
-    <image src="./files/img.png" />
 </body>
 </html>
