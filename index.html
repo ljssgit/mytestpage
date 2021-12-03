@@ -3,25 +3,279 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <script>
-var BPM = 100;
-var MODE = 0;
-var timerid = null;
-var nm_list = ["note", "chordtone", "tension", "form"]
-var note_list = ["C", "C#(Db)", "D", "D#(Eb)", "E", "F", "F#(Gb)", "G", "G#(Ab)", "A", "A#(Bb)", "B"];
-var chordtone_list = ["7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
-var tension_list = ["b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
-var form_list = [" [1전위]", " [2전위]"]
-var major_scale = [2, 2, 1, 2, 2, 2, 1];
+let BPM = 50;
+let VOLUME = 50;
+let MODE = 2;
+let timerid = null;
+let nm_list = ["note", "chordtone", "tension", "form"]
+let major_scale = [2, 2, 1, 2, 2, 2, 1];
 
-var piano_octave = [2, 3, 4];
-//var piano_audioes = [];
+//let piano_audioes = [];
+
+function changecss(theClass,element,value) {
+    //Last Updated on July 4, 2011
+    //documentation for this script at
+    //http://www.shawnolson.net/a/503/altering-css-class-attributes-with-javascript.html
+    let cssRules;
+
+    for (let S = 0; S < document.styleSheets.length; S++){
+        try{
+            document.styleSheets[S].insertRule(theClass+' { '+element+': '+value+'; }',document.styleSheets[S][cssRules].length);
+        } catch(err){
+            try{document.styleSheets[S].addRule(theClass,element+': '+value+';');
+            } catch(err){
+                try{
+                    if (document.styleSheets[S]['rules']) {
+                        cssRules = 'rules';
+                    } else if (document.styleSheets[S]['cssRules']) {
+                        cssRules = 'cssRules';
+                    } else {
+                        //no rules found... browser unknown
+                    }
+                    for (let R = 0; R < document.styleSheets[S][cssRules].length; R++) {
+                        if (document.styleSheets[S][cssRules][R].selectorText == theClass) {
+                            if(document.styleSheets[S][cssRules][R].style[element]){
+                                document.styleSheets[S][cssRules][R].style[element] = value;
+                                break;
+                            }
+                        }
+                    }
+                } catch (err){}
+            }
+        }
+    }
+}
+
+class Note {
+    static names = ["C", "C#(Db)", "D", "D#(Eb)", "E", "F", "F#(Gb)", "G", "G#(Ab)", "A", "A#(Bb)", "B"];
+
+    constructor() {}
+
+    static num2name(num) {
+        if (num instanceof Array) {
+            let name_list = []
+            for (let i in num)
+                name_list.push(Note.names[num[i]]);
+
+            return name_list;
+        }
+
+        return Note.names[num];
+    }
+
+    static name2num(name) {
+        if(typeof name == "string")
+            return Note.names.indexOf(name);
+
+        return name;
+
+    }
+}
+
+class Chord {
+    static chordtones = ["7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
+    static tensions = ["b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
+    static forms = [" [1전위]", " [2전위]"]
+
+    constructor() {}
+
+    static chordtone(chord_nm) {
+        let result = [];
+
+        // 코드 한개짜리 tension 추가
+        let split_nm = chord_nm.split(" [")[0];
+        let num = -1;
+        if (split_nm.length == 1 || (split_nm[1] == "#" && split_nm.length == 6)) {
+            num = Note.name2num(split_nm);
+            result.push(num, (num+2)%12, (num+4)%12, (num+7)%12);
+        }
+        else {
+            // 근음 추가
+            if (chord_nm.length > 1 && chord_nm[1] == "#")
+                num = Note.name2num(chord_nm.substr(0,6));
+            else num = Note.name2num(chord_nm[0]);
+            result.push(num);
+
+            // 코드톤 추가
+            for (let i=this.chordtones.length-1;i>=0;i--) {
+                let add_name = this.chordtones[i]
+                if (chord_nm.indexOf(add_name) > -1) {
+                    if      (add_name == "7"     )  result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
+                    else if (add_name == "m7"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
+                    else if (add_name == "M7"    )  result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
+                    else if (add_name == "mM7"   )  result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
+                    else if (add_name == "7sus4" )  result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
+                    else if (add_name == "m6"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
+                    else if (add_name == "dim7"  )  result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
+                    else if (add_name == "m7(b5)")  result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
+                    break;
+                }
+            }
+        }
+
+        // ===== tension 미추가 =====
+
+        // 전위
+        this.forms.reverse();
+        result.splice(1, 0, result.pop());
+        for (let i in this.forms) {
+            if (chord_nm.indexOf(this.forms[i]) > -1) break;
+            result.splice(1, 0, result.pop());
+        }
+        this.forms.reverse();
+
+        return result;
+    }
+}
+
+class Piano {
+    static piano_object = null;
+    static keys = [];
+    static sounds = [];
+    static selected_keys = [];
+    static key_size = [135, 21, 85, 11];
+    static piano_octave = [2, 3, 4];
+
+    static make_keys(piano_obj) {
+        for (i in this.piano_octave) {
+            for (j in Note.names) {
+                let key = document.createElement("div");
+                let id = Note.names[j]+this.piano_octave[i]
+                key.setAttribute("id", id);
+                if(Note.names[j].length == 1) {
+                    key.setAttribute("class", "white_key");
+                    piano_obj.appendChild(key);
+                }
+                else {
+                    key.setAttribute("class", "black_key");
+                    piano_obj.lastChild.appendChild(key);
+                }
+                this.keys.push(id);
+            }
+            this.piano_object = piano_obj;
+        }
+
+        for (i in this.keys) {
+            let fnm = this.keys[i].replace(/\#\(.*\)/, "");
+            let sound = new Audio("./files/"+fnm+".ogg");
+            sound.loop=false;
+            this.sounds.push(sound);
+        }
+    }
+
+    //건반 크기 조정
+    static set_piano_size(ratio) {
+        //key_size = [135, 21, 85, 10];
+
+        changecss(".white_key", "height",(this.key_size[0]*ratio)+"px");
+        changecss(".white_key", "width",(this.key_size[1]*ratio)+"px");
+        changecss(".black_key", "height",(this.key_size[2]*ratio)+"px");
+        changecss(".black_key", "width",(this.key_size[3]*ratio)+"px");
+        changecss(".black_key", "left",((this.key_size[1]-this.key_size[3]*0.5)*ratio+1)+"px");
+    }
+
+    static clear_piano() {
+        for (i in this.selected_keys) {
+            let element = document.getElementById(this.selected_keys[i]);
+            element.className = element.className.replace(/ selected_root_key| selected_key/, "");
+            element.style.backgroundColor = "";
+            this.play_sound(this.selected_keys[i], false);
+        }
+
+        this.selected_keys = [];
+        // for(i in this.piano_octave) {
+        //     let oct = this.piano_octave[i];
+        //     for(i in Note.names) {
+        //         let class_name = document.getElementById(Note.names[i]+oct).className.split(" ");
+        //         if (class_name.length > 1)
+        //             document.getElementById(Note.names[i]+oct).className = class_name[0];
+        //     }
+        // }
+    }
+
+    static mark_piano(chordtone) {
+        this.clear_piano();
+        let ct = [];
+        let oct = 3;
+        for (i in chordtone) {
+            if (i > 0 && chordtone[i-1] > chordtone[i]) oct++;
+            if (oct > 4) {
+                oct--;
+                for (j=0;j<i;j++)
+                    ct[j] = ct[j].substr(0,ct[j].length-1)+(parseInt(ct[j][ct[j].length-1])-1);
+            }
+            ct.push(Note.names[chordtone[i]]+oct);
+        }
+
+        for (i in ct) {
+            if (i==0) {
+                this.key_select(ct[i], true);
+            }
+            else {
+                this.key_select(ct[i], false);
+            }
+        }
+    }
+    
+    static key_select(key_id, is_root) {
+        console.log(key_id + " select");
+        let key_element = document.getElementById(key_id);
+        let selected_idx = this.selected_keys.indexOf(key_id);
+        if (selected_idx >= 0) {
+            key_element.className = key_element.className.replace(/ selected_root_key| selected_key/, "");
+            this.selected_keys.splice(selected_idx, 1);
+
+            this.play_sound(key_id, false);
+        }
+        else {
+            let class_name;
+            if (is_root) class_name = " selected_root_key";
+            else class_name = " selected_key";
+            key_element.className += class_name;
+            this.selected_keys.push(key_id);
+
+            this.play_sound(key_id, true);
+        }
+    }
+
+    static play_sound(key_id, flag) {
+        let sound = this.sounds[this.keys.indexOf(key_id)];
+        if (flag) {
+            sound.currentTime = 0;
+            sound.volume = VOLUME/100;
+            sound.play();
+            //setTimeout();
+
+            let fadePoint = 1;
+
+            var fadeAudio = setInterval(function () {
+                // Only fade if past the fade out point or not at zero already
+                //console.log(sound.currentTime);
+                if ((sound.currentTime >= fadePoint) && (sound.volume > 0.0)) {
+                    if (sound.volume < 0.1*VOLUME/100) sound.volume = 0.0;
+                    else sound.volume -= 0.1*VOLUME/100;
+                }
+                // When volume at zero stop all the intervalling
+                if (sound.volume == 0.0) {
+                    sound.pause();
+                    clearInterval(fadeAudio);
+                }
+                //console.log(sound.volume);
+
+                }, 200);
+        }
+        else {
+            sound.pause();
+        }
+    }
+}
 
 function make_scale(note) {
     octave = [];
-    note = note2num(note);
+    note = Note.name2num(note);
 
     octave.push(note);
-    for (var i in major_scale) {
+    for (let i in major_scale) {
         num = (octave[octave.length-1]+major_scale[i])%12;
         octave.push(num);
     }
@@ -30,78 +284,11 @@ function make_scale(note) {
     return octave;
 }
 
-function num2note(num) {
-    if (num instanceof Array) {
-        var name_list = []
-        for (var i in num)
-            name_list.push(note_list[num[i]]);
-
-        return name_list;
-    }
-
-    return note_list[num];
-}
-
-function note2num(note) {
-    if(typeof note == "string")
-        return note_list.indexOf(note);
-
-    return note;
-}
-
-function chordtone(chord_nm) {
-    result = [];
-
-    // 코드 한개짜리 tension 추가
-    split_nm = chord_nm.split(" [")[0];
-    if (split_nm.length == 1 || (split_nm[1] == "#" && split_nm.length == 6)) {
-        num = note2num(split_nm);
-        result.push(num, (num+2)%12, (num+4)%12, (num+7)%12);
-    }
-    else {
-        // 근음 추가
-        num = -1;
-        if (chord_nm.length > 1 && chord_nm[1] == "#")
-             num = note2num(chord_nm.substr(0,6));
-        else num = note2num(chord_nm[0]);
-        result.push(num);
-
-        // 코드톤 추가
-        for (var i=chordtone_list.length-1;i>=0;i--) {
-            add_name = chordtone_list[i]
-            if (chord_nm.indexOf(add_name) > -1) {
-                if      (add_name == "7"     )  result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
-                else if (add_name == "m7"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
-                else if (add_name == "M7"    )  result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
-                else if (add_name == "mM7"   )  result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
-                else if (add_name == "7sus4" )  result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
-                else if (add_name == "m6"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
-                else if (add_name == "dim7"  )  result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
-                else if (add_name == "m7(b5)")  result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
-                break;
-            }
-        }
-    }
-
-    // ===== tension 미추가 =====
-
-    // 전위
-    form_list.reverse();
-    result.splice(1, 0, result.pop());
-    for (var i in form_list) {
-        if (chord_nm.indexOf(form_list[i]) > -1) break;
-        result.splice(1, 0, result.pop());
-    }
-    form_list.reverse();
-
-    return result;
-}
-
 // ids = [note_ids, add_ids, tension_ids, form_ids]
 function rand_chord_generate() {
-    var list = [note_list, chordtone_list, tension_list, form_list]
-    var chord = "";
-    var ids = [[], [], [], []]
+    let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.forms]
+    let chord = "";
+    let ids = [[], [], [], []]
     for (i in ids) {
         chks = document.getElementsByName("chk_"+ nm_list[i]);
         for (j in chks)
@@ -133,10 +320,10 @@ function print_rand_chord(mark_piano_yn) {
     }
 
     document.getElementById("chord").innerHTML = chord_text;
-    cdtone = chordtone(chord);
-    document.getElementById("chordtone").innerHTML = num2note(cdtone).toString();
+    cdtone = Chord.chordtone(chord);
+    document.getElementById("chordtone").innerHTML = Note.num2name(cdtone).toString();
     if (mark_piano_yn) {
-        mark_piano(cdtone);
+        Piano.mark_piano(cdtone);
     }
 
     return cdtone;
@@ -151,116 +338,25 @@ function auto_print_chord(flag) {
     //return auto_print_chord(flag);
 }
 
-function mark_piano(chordtone) {
-    clear_piano();
-    ct = [];
-    oct = 3;
-    for (i in chordtone) {
-        if (i > 0 && chordtone[i-1] > chordtone[i]) oct++;
-        if (oct > 4) {
-            oct--;
-            for (j=0;j<i;j++)
-                ct[j] = ct[j].substr(0,ct[j].length-1)+(parseInt(ct[j][ct[j].length-1])-1);
-        }
-        ct.push(note_list[chordtone[i]]+oct);
-    }
-
-    for (i in ct) {
-        if (i==0) key_select(document.getElementById(ct[i]), true);
-        else key_select(document.getElementById(ct[i]), false);
-    }
-}
-
-function clear_piano() {
-    for(i in piano_octave) {
-        oct = piano_octave[i];
-        for(i in note_list) {
-            class_name = document.getElementById(note_list[i]+oct).className.split(" ");
-            if (class_name.length > 1)
-                document.getElementById(note_list[i]+oct).className = class_name[0];
-        }
-    }
-}
-
-function changecss(theClass,element,value) {
-    //Last Updated on July 4, 2011
-    //documentation for this script at
-    //http://www.shawnolson.net/a/503/altering-css-class-attributes-with-javascript.html
-    var cssRules;
-
-    for (var S = 0; S < document.styleSheets.length; S++){
-        try{
-            document.styleSheets[S].insertRule(theClass+' { '+element+': '+value+'; }',document.styleSheets[S][cssRules].length);
-        } catch(err){
-            try{document.styleSheets[S].addRule(theClass,element+': '+value+';');
-            } catch(err){
-                try{
-                    if (document.styleSheets[S]['rules']) {
-                        cssRules = 'rules';
-                    } else if (document.styleSheets[S]['cssRules']) {
-                        cssRules = 'cssRules';
-                    } else {
-                        //no rules found... browser unknown
-                    }
-                    for (var R = 0; R < document.styleSheets[S][cssRules].length; R++) {
-                        if (document.styleSheets[S][cssRules][R].selectorText == theClass) {
-                            if(document.styleSheets[S][cssRules][R].style[element]){
-                                document.styleSheets[S][cssRules][R].style[element] = value;
-                                break;
-                            }
-                        }
-                    }
-                } catch (err){}
-            }
-        }
-    }
-}
-
-function getAudios() {
-
-}
-
-function key_select(key_element, is_root) {
-    if (key_element.className.split(" ").length > 1) {
-        key_element.className = key_element.className.split(" ")[0];
-    }
-    else {
-        class_name = " selected_key";
-        if (i==0) class_name = " selected_root_key";
-        key_element.className += class_name;
-    }
-}
-
 function is_correct() {
     ct = document.getElementById("chordtone").innerText.split(",");
-    select_list = []
+    select_list = Piano.selected_keys;
 
-    for (i in piano_octave)
-        for (j in note_list)
-            if (document.getElementById(note_list[j]+piano_octave[i]).className.split(" ").length > 1)
-                select_list.push(note_list[j])
+    // for (i in Piano.piano_octave)
+    //     for (j in Note.names)
+    //         if (document.getElementById(Note.names[j]+Piano.piano_octave[i]).className.split(" ").length > 1)
+    //             select_list.push(Note.names[j])
 
     if (select_list.length != ct.length) return false;
 
     for (i in ct)
-        if (ct[i] != select_list[i]) return false;
-
-    // for (i in ct) {
-    //     for (j in piano_octave) {
-    //         if (document.getElementById(ct[i]+piano_octave[j]).className.split(" ").length > 1) {
-    //             if (j < select_list[select_list.length-1]) return false;
-    //             select_list.push(j);
-    //             break;
-    //         }
-    //     }
-    // }
-    // if (select_list.length < ct.length) return false;
+        if (ct[i] != select_list[i].substr(0, select_list[i].length-1)) return false;
 
     return true;
 }
 
 function init_setting() {
-    list = [note_list, chordtone_list, tension_list, form_list]
+    list = [Note.names, Chord.chordtones, Chord.tensions, Chord.forms]
 
     //setting 생성
     set_div = document.getElementById("setting");
@@ -275,38 +371,18 @@ function init_setting() {
 
     //piano 생성
     piano = document.getElementById("piano");
-    for (i in piano_octave) {
-        for (j in note_list) {
-            var key = document.createElement("div");
-            key.setAttribute("id", note_list[j]+piano_octave[i]);
-            key.setAttribute("selected", false);
-            if(note_list[j].length == 1) {
-                key.setAttribute("class", "white_key");
-                piano.appendChild(key);
-            }
-            else {
-                key.setAttribute("class", "black_key");
-                piano.lastChild.appendChild(key);
-                //piano.innerHTML += "<div id='"+ note_list[j] + octave[i]+"' class='white_key'>";
-            }
-        }
-
-        set_div.innerHTML += "<br/>";
-    }
-
-    // 피아노 사이즈 설정
-    set_piano_size(2);
+    Piano.make_keys(piano);
+    Piano.set_piano_size(2);
 
     //초기값설정
     chks = document.getElementsByName("chk_tension");
     for (j in chks) chks[j].checked = false;
 
-
     // 이벤트 리스너 설정
     document.querySelector('#next_btn').addEventListener('click',function(){
         if (MODE == 0) {auto_print_chord(true);}
         else if (MODE == 1) {print_rand_chord(true);}
-        else if (MODE == 2) {clear_piano();print_rand_chord(false);}
+        else if (MODE == 2) {Piano.clear_piano();print_rand_chord(false);}
         else {alert("오류 !");}
     });
     document.getElementsByName("mode").forEach((radio) => {
@@ -316,26 +392,21 @@ function init_setting() {
     });
     piano.addEventListener('click',function(e){
         if (MODE == 2) {
-            key_select(e.target, false);
+            Piano.key_select(e.target.getAttribute("id"), false);
             if (is_correct()) {
+                for (i in Piano.selected_keys)
+                    document.getElementById(Piano.selected_keys[i]).style.backgroundColor = "#368AFF";
+                
                 setTimeout(
-                    function(){clear_piano();print_rand_chord(false);}
-                    , 500);
+                    function(){
+                        Piano.clear_piano();
+                        print_rand_chord(false);
+                    }
+                    , 2000
+                );
             }
         }
     });
-}
-
-//건반 크기 조정
-function set_piano_size(ratio) {
-    //key_size = [135, 21, 85, 10];
-    var key_size = [135, 21, 85, 11];
-
-    changecss(".white_key", "height",(key_size[0]*ratio)+"px");
-    changecss(".white_key", "width",(key_size[1]*ratio)+"px");
-    changecss(".black_key", "height",(key_size[2]*ratio)+"px");
-    changecss(".black_key", "width",(key_size[3]*ratio)+"px");
-    changecss(".black_key", "left",((key_size[1]-key_size[3]*0.5)*ratio+1)+"px");
 }
 
 function change_mode(mode) {
@@ -358,7 +429,7 @@ function change_mode(mode) {
         else if (mode == 2) {
             document.getElementById("chordtone").style.display = "none";
             console.log("맞추기 모드 전환");
-            clear_piano();
+            Piano.clear_piano();
             print_rand_chord(false);
         }
     }
@@ -386,20 +457,21 @@ function setting_display(flag) {
 
 window.onload = function() {
     // oct = make_scale("C");
-    // nm = num2note(oct);
+    // nm = Note.num2name(oct);
     //
     // dv = document.getElementById("chord");
     // dv.innerHTML = "C Major Scale : " + nm.toString() + "<br/>";
     //
     // chord = "DmM7 [A form]"
-    // ct = num2note(chordtone(chord));
+    // ct = Note.num2name(Chord.chordtone(chord));
     // dv.innerHTML += chord + ct.toString() + "<br/>";
     init_setting();
-    setBPM();
+    change_mode(MODE);
+    //setBPM();
 }
+
 </script>
 <style>
-
 .label_set {
     background-color:#1F51B7;
     color:white;
@@ -437,7 +509,7 @@ window.onload = function() {
     width:2.1px;
     */
     height:100px;
-    width:20px; */
+    width:20px;
 }
 .black_key {
     padding:0;
@@ -497,9 +569,12 @@ window.onload = function() {
             </label>
         </p>
         <input type="text" id="bpm" value="50" style="width:150px;height:50px;font-size:xx-large;text-align:center;"/>
-        <button onclick="setBPM()" style="width:150px;height:50px;font-size:xx-large;">BPM적용</button>
+        <button onclick="setBPM()" id="bpm_set_btn" style="width:150px;height:50px;font-size:xx-large;">BPM적용</button>
+        &nbsp;&nbsp;
+        <input type="text" id="volume" value="50" style="width:150px;height:50px;font-size:xx-large;text-align:center;"/>
+        <button onclick="VOLUME=document.getElementById('volume').value;" id="volume_set_btn" style="width:150px;height:50px;font-size:xx-large;">볼륨적용</button>
         <!--<input type="button" onclick="setBPM()" style="width:150px;height:50px;font-size:xx-large;" value="BPM적용"/>-->
-        <br/>
+        <br />
     </div>
     <div id="chord" style="font-size:xxx-large;text-align:center">
     </div>
