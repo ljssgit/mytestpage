@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="shortcut icon" href="#">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <script>
 let BPM = 50;
 let VOLUME = 50;
@@ -10,6 +10,8 @@ let MODE = 2;
 let timerid = null;
 let nm_list = ["note", "chordtone", "tension", "form"]
 let major_scale = [2, 2, 1, 2, 2, 2, 1];
+let songs = [];
+//let cur_song = -1;
 
 //let piano_audioes = [];
 
@@ -65,8 +67,15 @@ class Note {
     }
 
     static name2num(name) {
-        if(typeof name == "string")
-            return Note.names.indexOf(name);
+        if(typeof name == "string") {
+            let num = Note.names.indexOf(name);
+            if (num == -1 && name.length > 1) {
+                let idx = Note.names.indexOf(name[0]);
+                if(name[1] == "#") num = idx+1;
+                else num = idx-1;
+            }
+            return num;
+        }
 
         return name;
 
@@ -83,35 +92,43 @@ class Chord {
     static chordtone(chord_nm) {
         let result = [];
 
-        // 코드 한개짜리 tension 추가
-        let split_nm = chord_nm.split(" [")[0];
+        let split_nm = chord_nm.split(" [")[0].split("/");
         let num = -1;
-        if (split_nm.length == 1 || (split_nm[1] == "#" && split_nm.length == 6)) {
-            num = Note.name2num(split_nm);
-            result.push(num, (num+2)%12, (num+4)%12, (num+7)%12);
-        }
-        else {
-            // 근음 추가
-            if (chord_nm.length > 1 && chord_nm[1] == "#")
-                num = Note.name2num(chord_nm.substr(0,6));
-            else num = Note.name2num(chord_nm[0]);
+        // 근음 추가
+        if (split_nm.length > 1) {   //슬래시코드
+            split_nm = split_nm[1];
+            if (split_nm.length > 1 && (split_nm[1] == "#" || split_nm[1] == "b"))
+                num = Note.name2num(split_nm.substr(0,2));
+            else num = Note.name2num(split_nm[0]);
             result.push(num);
+        }
+        if (chord_nm.length > 1 && (chord_nm[1] == "#" || chord_nm[1] == "b"))
+            num = Note.name2num(chord_nm.substr(0,2));
+        else num = Note.name2num(chord_nm[0]);
+        result.push(num);
 
-            // 코드톤 추가
-            for (let i=this.chordtones.length-1;i>=0;i--) {
-                let add_name = this.chordtones[i]
-                if (chord_nm.indexOf(add_name) > -1) {
-                    if      (add_name == "7"     )  result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
-                    else if (add_name == "m7"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
-                    else if (add_name == "M7"    )  result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
-                    else if (add_name == "mM7"   )  result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
-                    else if (add_name == "7sus4" )  result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
-                    else if (add_name == "m6"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
-                    else if (add_name == "dim7"  )  result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
-                    else if (add_name == "m7(b5)")  result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
-                    break;
-                }
+        // 코드톤 추가
+        for (let i=this.chordtones.length-1;i>=0;i--) {
+            let add_name = this.chordtones[i]
+            if (chord_nm.indexOf(add_name) > -1) {
+                if      (add_name == "7"     )  result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "m7"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "M7"    )  result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
+                else if (add_name == "mM7"   )  result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
+                else if (add_name == "7sus4" )  result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "m6"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
+                else if (add_name == "dim7"  )  result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
+                else if (add_name == "m7(b5)")  result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
+                break;
             }
+        }
+        // 코드 한개짜리 tension 추가
+        if (result.length < 3) {
+            if(split_nm.length > 1) {
+                if ((num+4)%12 == result[0]) result.push((num+2)%12, (num+7)%12);
+                else result.push((num+4)%12, (num+7)%12);
+            }
+            else result.push((num+2)%12, (num+4)%12, (num+7)%12);
         }
 
         // ===== tension 미추가 =====
@@ -157,7 +174,7 @@ class Piano {
         }
 
         for (i in this.keys) {
-            let fnm = this.keys[i].replace(/\#\(.*\)/, "").toLowerCase();
+            let fnm = this.keys[i].replace(/\#\(.*\)/, "-").toLowerCase();
             //let sound = new Audio("files/"+fnm+".ogg");
             let sound = new Audio("https://raw.githubusercontent.com/ljssgit/mytestpage/main/files/"+fnm+".ogg");
             sound.loop=false;
@@ -198,29 +215,27 @@ class Piano {
     static mark_piano(chordtone) {
         this.clear_piano();
         let ct = [];
-        let oct = 3;
-        for (i in chordtone) {
-            if (i > 0 && chordtone[i-1] > chordtone[i]) oct++;
-            if (oct > 4) {
+        let oct = this.piano_octave[0];
+        ct.push(Note.names[chordtone[0]]+oct);
+        oct++;
+        for (let i=1;i<chordtone.length;i++) {
+            if (chordtone[i-1] > chordtone[i]) oct++;
+            if (oct > this.piano_octave[this.piano_octave.length-1]) {
                 oct--;
-                for (j=0;j<i;j++)
+                for (j=1;j<i;j++)
                     ct[j] = ct[j].substr(0,ct[j].length-1)+(parseInt(ct[j][ct[j].length-1])-1);
             }
             ct.push(Note.names[chordtone[i]]+oct);
         }
-
-        for (i in ct) {
-            if (i==0) {
-                this.key_select(ct[i], true);
-            }
-            else {
-                this.key_select(ct[i], false);
-            }
-        }
+        //console.log(ct.toString());
+        this.key_select(ct[0], true);
+        for (let i=1;i<ct.length;i++)
+            this.key_select(ct[i], false);
     }
     
     static key_select(key_id, is_root) {
-        console.log(key_id + " select");
+        if (key_id == "piano") return;
+        //console.log(key_id + " select");
         let key_element = document.getElementById(key_id);
         let selected_idx = this.selected_keys.indexOf(key_id);
         if (selected_idx >= 0) {
@@ -246,29 +261,70 @@ class Piano {
             sound.currentTime = 0;
             sound.volume = VOLUME/100;
             sound.play();
-            //setTimeout();
 
             let fadePoint = 1;
-
-            var fadeAudio = setInterval(function () {
+            sound.fadeAudio = setInterval(function () {
                 // Only fade if past the fade out point or not at zero already
-                //console.log(sound.currentTime);
                 if ((sound.currentTime >= fadePoint) && (sound.volume > 0.0)) {
                     if (sound.volume < 0.1*VOLUME/100) sound.volume = 0.0;
                     else sound.volume -= 0.1*VOLUME/100;
                 }
                 // When volume at zero stop all the intervalling
-                if (sound.volume == 0.0) {
+                if (sound.volume == 0.0 || sound.paused) {
                     sound.pause();
-                    clearInterval(fadeAudio);
+                    clearInterval(sound.fadeAudio);
                 }
-                //console.log(sound.volume);
-
                 }, 200);
         }
         else {
             sound.pause();
+            clearInterval(sound.fadeAudio);
         }
+    }
+}
+
+class SheetMusic {
+    chord_list = [];
+    timers = [];
+    is_playing = false;
+
+    constructor(chord_list) {
+        for (let i in chord_list) {
+            if (!(chord_list[i][0] >= "A" && chord_list[i][0] <= "G")) {
+                this.chord_list.push(this.chord_list[this.chord_list.length-1]);
+                continue;
+            }
+            
+            let chord_split = chord_list[i].split(".");
+            let chord = chord_split[0];
+            if (chord_split.length > 1)
+                chord += Chord.forms[parseInt(chord_split[1])-1];
+            
+            this.chord_list.push(chord);
+        }
+    }
+
+    play() {
+        let tick = 1000*60/BPM;
+        this.is_playing = true;
+        document.getElementById("music_btn").innerText = "stop";
+        for(let i in this.chord_list) {
+            let timer = setTimeout(print_chord, i*tick, this.chord_list[i], true);
+            this.timers.push(timer);
+        }
+        let timer = setTimeout(()=>{
+            this.is_playing=false;
+            document.getElementById("music_btn").innerText = "start";
+        }, this.chord_list.length*tick);
+        this.timers.push(timer);
+    }
+
+    stop() {
+        for (let i in this.timers) {
+            clearTimeout(this.timers[i]);
+        }
+        this.is_playing = false;
+        document.getElementById("music_btn").innerText = "start";
     }
 }
 
@@ -312,8 +368,8 @@ function rand_chord_generate() {
 }
 
 function print_rand_chord(mark_piano_yn) {
-    chord = rand_chord_generate();
-    chord_text = chord;
+    chord_text = rand_chord_generate();
+    chord = chord_text;
     if (chord_text.length > 1 && chord_text[1] == "#") {
         if (Math.random() < 0.5)
             chord_text = chord_text.substr(0,2) + chord_text.substr(6)
@@ -321,14 +377,18 @@ function print_rand_chord(mark_piano_yn) {
             chord_text = chord_text.substr(3,2) + chord_text.substr(6)
     }
 
+    print_chord(chord, mark_piano_yn)
+
+    return cdtone;
+}
+
+function print_chord(chord_text, mark_piano_yn) {
     document.getElementById("chord").innerHTML = chord_text;
-    cdtone = Chord.chordtone(chord);
+    cdtone = Chord.chordtone(chord_text);
     document.getElementById("chordtone").innerHTML = Note.num2name(cdtone).toString();
     if (mark_piano_yn) {
         Piano.mark_piano(cdtone);
     }
-
-    return cdtone;
 }
 
 function auto_print_chord(flag) {
@@ -341,8 +401,14 @@ function auto_print_chord(flag) {
 }
 
 function is_correct() {
-    ct = document.getElementById("chordtone").innerText.split(",");
-    select_list = Piano.selected_keys;
+    let ct = document.getElementById("chordtone").innerText.split(",");
+    let select_list = Object.assign([], Piano.selected_keys);
+    select_list.sort((a, b) => {
+        let a_num = Note.names.indexOf(a.substr(0, a.length-1)) + parseInt(a[a.length-1]) * 12 + 12;
+        let b_num = Note.names.indexOf(b.substr(0, b.length-1)) + parseInt(b[b.length-1]) * 12 + 12;
+        return a_num-b_num;
+    });
+    //console.log(select_list);
 
     // for (i in Piano.piano_octave)
     //     for (j in Note.names)
@@ -381,23 +447,28 @@ function init_setting() {
     for (j in chks) chks[j].checked = false;
 
     // 이벤트 리스너 설정
+    // next btn
     document.querySelector('#next_btn').addEventListener('click',function(){
         if (MODE == 0) {auto_print_chord(true);}
         else if (MODE == 1) {print_rand_chord(true);}
         else if (MODE == 2) {Piano.clear_piano();print_rand_chord(false);}
         else {alert("오류 !");}
     });
+    // mode change
     document.getElementsByName("mode").forEach((radio) => {
         radio.addEventListener('change',function(){
             change_mode(this.value);
         })
     });
+    // piano change
     piano.addEventListener('click',function(e){
         if (MODE == 2) {
             Piano.key_select(e.target.getAttribute("id"), false);
             if (is_correct()) {
-                for (i in Piano.selected_keys)
+                for (i in Piano.selected_keys) {
                     document.getElementById(Piano.selected_keys[i]).style.backgroundColor = "#368AFF";
+                    Piano.play_sound(Piano.selected_keys[i], true);
+                }
                 
                 setTimeout(
                     function(){
@@ -406,6 +477,27 @@ function init_setting() {
                     }
                     , 2000
                 );
+            }
+        }
+    });
+    //파일 업로드
+    document.getElementById("file").addEventListener("change", (event) => {
+        const file = event.target.files[0]; // file 객체
+        const reader = new FileReader(); // fileReader 생성
+        reader.readAsText(file);
+        reader.onload = function (e) {
+        // load 이벤트의 핸들러. 이 이벤트는 읽기 동작이 성공적으로 완료 되었을 때마다 발생
+            songs.push(new SheetMusic(e.target.result.split(/\s+/)));
+        }
+    });
+    //파일 재생
+    document.getElementById("music_btn").addEventListener("click", (event) => {
+        if (songs[0].is_playing) {
+            songs[0].stop();
+        }
+        else {
+            if (songs.length > 0) {
+                songs[0].play();
             }
         }
     });
@@ -429,7 +521,7 @@ function change_mode(mode) {
         }
         // 모드 2: 맞추기
         else if (mode == 2) {
-            document.getElementById("chordtone").style.display = "none";
+            //document.getElementById("chordtone").style.display = "none";
             console.log("맞추기 모드 전환");
             Piano.clear_piano();
             print_rand_chord(false);
@@ -448,12 +540,14 @@ function setting_display(flag) {
     if (flag) {
         document.getElementById("setting_btn").style.display = "none";
         document.getElementById("next_btn").style.display = "none";
+        document.getElementById("music_btn").style.display = "none";
         document.getElementById("setting").style.display = "block";
     }
     else {
         document.getElementById("setting").style.display = "none";
         document.getElementById("setting_btn").style.display = "block";
         document.getElementById("next_btn").style.display = "block";
+        document.getElementById("music_btn").style.display = "block";
     }
 }
 
@@ -469,6 +563,9 @@ window.onload = function() {
     // dv.innerHTML += chord + ct.toString() + "<br/>";
     init_setting();
     change_mode(MODE);
+    // song1 = new SheetMusic(["A#(Bb)", "-", "Cm7.2", "-","Dm7.1" ,"-" , "Gm7", "-"]);
+    // songs.push(song1);
+
     //setBPM();
 }
 
@@ -557,6 +654,7 @@ window.onload = function() {
 <body style="font-size:x-large;margin:0">
     <a id="setting_btn" class="setting_btn" onclick="setting_display(true)">setting</a>
     <a id="next_btn" class="setting_btn" style="right:124px">Next</a>
+    <a id="music_btn" class="setting_btn" style="left:0px;right:auto;">start</a>
     <div id ="setting">
         <div style="display:block;position:absolute;right:20px;font-weight:bold"font-size:xxx-large; onclick="setting_display(false)">X</div>
         <p style="font-size:xx-large;margin-top:0px;">
@@ -576,6 +674,8 @@ window.onload = function() {
         <input type="text" id="volume" value="50" style="width:150px;height:50px;font-size:xx-large;text-align:center;"/>
         <button onclick="VOLUME=document.getElementById('volume').value;" id="volume_set_btn" style="width:150px;height:50px;font-size:xx-large;">볼륨적용</button>
         <!--<input type="button" onclick="setBPM()" style="width:150px;height:50px;font-size:xx-large;" value="BPM적용"/>-->
+        <br />
+        <input type='file' id="file" style="font-size:xx-large;"/>
         <br />
     </div>
     <div id="chord" style="font-size:xxx-large;text-align:center">
