@@ -11,7 +11,7 @@ let MODE = 2;
 let nm_list = ["note", "chordtone", "tension", "form"]
 let major_scale = [2, 2, 1, 2, 2, 2, 1];
 let songs = [];
-//let cur_song = -1;
+let cur_song_idx = -1;
 
 //let piano_audioes = [];
 
@@ -63,46 +63,6 @@ function make_scale(note) {
     return octave;
 }
 
-// ids = [note_ids, add_ids, tension_ids, form_ids]
-function rand_chord_generate() {
-    let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.forms]
-    let chord = "";
-    let ids = [[], [], [], []]
-    for (i in ids) {
-        chks = document.getElementsByName("chk_"+ nm_list[i]);
-        for (j in chks)
-            if (chks[j].checked)
-                ids[i].push(j);
-        if (ids[i].length==0) continue;
-        if (i==0) {
-            rand_idx = Math.random()*ids[i].length;
-            chord += list[i][ids[i][parseInt(rand_idx)]];
-        }
-        else {
-            rand_idx = Math.random()*(ids[i].length+1);
-            if (parseInt(rand_idx) < ids[i].length)
-                chord += list[i][ids[i][parseInt(rand_idx)]];
-        }
-    }
-
-    return chord
-}
-
-function print_rand_chord(mark_piano_yn) {
-    chord_text = rand_chord_generate();
-    chord = chord_text;
-    if (chord_text.length > 1 && chord_text[1] == "#") {
-        if (Math.random() < 0.5)
-            chord_text = chord_text.substr(0,2) + chord_text.substr(6)
-        else
-            chord_text = chord_text.substr(3,2) + chord_text.substr(6)
-    }
-
-    print_chord(chord, mark_piano_yn)
-
-    return cdtone;
-}
-
 function print_chord(chord_text, mark_piano_yn) {
     document.getElementById("chord").innerHTML = chord_text;
     cdtone = Chord.chordtone(chord_text);
@@ -112,19 +72,23 @@ function print_chord(chord_text, mark_piano_yn) {
     }
 }
 
-function auto_print_chord(flag) {
+function auto_print_chord() {
     clearTimeout(timerid);
-    if (flag) {
-        print_rand_chord(true);
-        timerid = setTimeout(
-            function timer() {
-                print_rand_chord(true);
-                timerid = setTimeout(timer, 1000*60*4/BPM);
-            }
-            , 1000*60*4/BPM
-        );
-    }
-    //return auto_print_chord(flag);
+
+    timerid = setTimeout(
+        function timer() {
+            // if (idx < chord_arr.length) {
+            //     print_chord(chord_arr[idx], true);
+            //     setTimeout(timer, 1000*60/BPM, idx+1);
+            // }
+            if (PlayingChordList.isLast()) return;
+
+            chord = PlayingChordList.next();
+            print_chord(chord, true);
+            timerid = setTimeout(timer, 1000*60/BPM);
+        }
+        , 0
+    );
 }
 
 function is_correct() {
@@ -144,7 +108,7 @@ function is_correct() {
 
     if (select_list.length != ct.length) return false;
 
-    for (i in ct)
+    for (let i in ct)
         if (ct[i] != select_list[i].substr(0, select_list[i].length-1)) return false;
 
     return true;
@@ -176,15 +140,17 @@ function init_setting() {
     // 이벤트 리스너 설정
     // next btn
     document.querySelector('#next_btn').addEventListener('click',function(){
-        if (MODE == 0) {auto_print_chord(true);}
-        else if (MODE == 1) {print_rand_chord(true);}
-        else if (MODE == 2) {Piano.clear_piano();print_rand_chord(false);}
+        if (MODE == 0) {auto_print_chord();}
+        else if (MODE == 1) {print_chord(PlayingChordList.next());}
+        else if (MODE == 2) {print_chord(PlayingChordList.next());}
         else {alert("오류 !");}
+        //change_mode(MODE);
     });
     // mode change
     document.getElementsByName("mode").forEach((radio) => {
         radio.addEventListener('change',function(){
-            change_mode(this.value);
+            //change_mode(this.value);
+            MODE = this.value;
         })
     });
     // piano change
@@ -200,7 +166,7 @@ function init_setting() {
                 setTimeout(
                     function(){
                         Piano.clear_piano();
-                        print_rand_chord(false);
+                        print_chord(PlayingChordList.next());
                     }
                     , 2000
                 );
@@ -215,17 +181,12 @@ function init_setting() {
         reader.onload = function (e) {
         // load 이벤트의 핸들러. 이 이벤트는 읽기 동작이 성공적으로 완료 되었을 때마다 발생
             songs.push(new SheetMusic(e.target.result.split(/\s+/)));
+            cur_song_idx = songs.length-1;
+            PlayingChordList.setChords(songs[cur_song_idx]);
         }
-    });
-    //파일 재생
-    document.getElementById("music_btn").addEventListener("click", (event) => {
-        if (songs[0].is_playing) {
-            songs[0].stop();
-        }
-        else {
-            if (songs.length > 0) {
-                songs[0].play();
-            }
+        reader.onerror = function (e) {
+            cur_song_idx = -1;
+            change_mode(MODE);
         }
     });
 }
@@ -233,49 +194,61 @@ function init_setting() {
 function change_mode(mode) {
     MODE = mode;
     clearTimeout(timerid);
+    chords = [];
+
+    if(cur_song_idx < 0) {
+        ids = [];
+        for (let i in nm_list) {
+            ids.push([]);
+            chks = document.getElementsByName("chk_"+ nm_list[i]);
+            for (let j in chks)
+                if (chks[j].checked)
+                    ids[i].push(j);
+        }
+        chords = Chord.rand_chords_generate(ids, 1000);
+    }
+    else {
+        chords = songs[cur_song_idx].chord_list;
+    }
+    PlayingChordList.setChords(chords);
+
     // 모드 0: 자동 코드
     if (mode == 0) {
         document.getElementById("chordtone").style.display = "block";
         console.log("자동 모드 전환");
-        setBPM();
+
+        auto_print_chord();
     }
     else {
-        auto_print_chord(false);
-
         // 모드 1: 수동 코드
         if (mode == 1) {
             document.getElementById("chordtone").style.display = "block";
             console.log("수동 모드 전환");
+            print_chord(PlayingChordList.next());
         }
         // 모드 2: 맞추기
         else if (mode == 2) {
             //document.getElementById("chordtone").style.display = "none";
             console.log("맞추기 모드 전환");
-            Piano.clear_piano();
-            print_rand_chord(false);
+            print_chord(PlayingChordList.next());
         }
     }
 }
 
 function setBPM() {
     BPM = document.getElementById("bpm").value;
-
-    if (MODE==0)
-        auto_print_chord(true);
 }
 
 function setting_display(flag) {
     if (flag) {
         document.getElementById("setting_btn").style.display = "none";
         document.getElementById("next_btn").style.display = "none";
-        document.getElementById("music_btn").style.display = "none";
         document.getElementById("setting").style.display = "block";
     }
     else {
         document.getElementById("setting").style.display = "none";
         document.getElementById("setting_btn").style.display = "block";
         document.getElementById("next_btn").style.display = "block";
-        document.getElementById("music_btn").style.display = "block";
     }
 }
 
@@ -380,11 +353,10 @@ window.onload = function() {
 </style>
 </head>
 <body style="font-size:x-large;margin:0">
-    <a id="setting_btn" class="setting_btn" onclick="setting_display(true)">setting</a>
+    <a id="setting_btn" class="setting_btn" onclick="clearTimeout(timerid);setting_display(true);">setting</a>
     <a id="next_btn" class="setting_btn" style="right:124px">Next</a>
-    <a id="music_btn" class="setting_btn" style="left:0px;right:auto;">start</a>
     <div id ="setting">
-        <div style="display:block;position:absolute;right:20px;font-weight:bold"font-size:xxx-large; onclick="setting_display(false)">X</div>
+        <div style="display:block;position:absolute;right:20px;font-weight:bold"font-size:xxx-large; onclick="change_mode(MODE);setting_display(false)">X</div>
         <p style="font-size:xx-large;margin-top:0px;">
             <label for="mode_0">
                 <input type="radio" name="mode" id="mode_0" value="0" class="chk"/> 자동

@@ -3,8 +3,6 @@ let timerid = null;
 class Note {
     static names = ["C", "C#(Db)", "D", "D#(Eb)", "E", "F", "F#(Gb)", "G", "G#(Ab)", "A", "A#(Bb)", "B"];
 
-    constructor() {}
-
     static num2name(num) {
         if (num instanceof Array) {
             let name_list = []
@@ -94,6 +92,83 @@ class Chord {
         this.forms.reverse();
 
         return result;
+    }
+
+    // ids = [note_ids, add_ids, tension_ids, form_ids]
+    static rand_chords_generate(ids, size=1) {
+        let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.forms]
+        let rand_chords = [];
+        for (let arr_idx=0;arr_idx<size;arr_idx++) {
+            let chord = "";
+            //let chk_ids = [[], [], [], []]
+            for (let i in ids) {
+                if (ids[i].length==0) continue;
+                if (i==0) {
+                    let rand_idx = Math.random()*ids[i].length;
+                    chord = list[i][ids[i][parseInt(rand_idx)]];
+                    
+                    if (chord.length > 1 && chord[1] == "#") {
+                        if (Math.random() < 0.5)
+                            chord = chord.substr(0,2);
+                        else
+                            chord = chord.substr(3,2);
+                    }
+                }
+                else {
+                    let rand_idx = Math.random()*(ids[i].length+1);
+                    if (parseInt(rand_idx) < ids[i].length)
+                        chord += list[i][ids[i][parseInt(rand_idx)]];
+                }
+            }
+
+            rand_chords.push(chord);
+        }
+
+        return rand_chords;
+    }
+}
+
+class PlayingChordList {
+    static chords = [];
+    static cur_idx = 0;
+
+    constructor(chord_list) {
+        this.chords = chord_list;
+        this.cur_idx = -1;
+    }
+
+    static setChords(chord_list, i=-1) {
+        this.chords = chord_list;
+        this.cur_idx = i;
+    }
+
+    static setIdx(i) {
+        this.cur_idx = i;
+    }
+
+    static next() {
+        if (this.cur_idx < this.chords.length)
+            this.cur_idx++;
+        //else cur_idx=0;
+        return this.chords[this.cur_idx];
+    }
+
+    static prev() {
+        if (this.cur_idx > 0)
+            this.cur_idx--;
+        //else cur_idx = chords.length-1;
+        return this.chords[this.cur_idx];
+    }
+
+    static goFirst() {
+        this.cur_idx = 0;
+        return this.chords[this.cur_idx];
+    }
+
+    static isLast() {
+        if (this.cur_idx >= this.chords.length-1)
+            return true;
+        return false;
     }
 }
 
@@ -259,30 +334,30 @@ class SheetMusic {
         }
     }
 
-    play() {
-        let tick = 1000*60/BPM;
-        this.is_playing = true;
-        document.getElementById("music_btn").innerText = "stop";
+    // play() {
+    //     let tick = 1000*60/BPM;
+    //     this.is_playing = true;
+    //     document.getElementById("music_btn").innerText = "stop";
 
-        clearTimeout(timerid);
+    //     clearTimeout(timerid);
 
-        let cd_list = this.chord_list;
-        timerid = setTimeout(
-            function timer(idx) {
-                console.log(idx);
-                if (idx < cd_list.length) {
-                    print_chord(cd_list[idx], true);
-                    setTimeout(timer, tick, idx+1);
-                }
-            }
-            , 0
-            , 0
-        );
-    }
+    //     let cd_list = this.chord_list;
+    //     timerid = setTimeout(
+    //         function timer(idx) {
+    //             console.log(idx);
+    //             if (idx < cd_list.length) {
+    //                 print_chord(cd_list[idx], true);
+    //                 setTimeout(timer, tick, idx+1);
+    //             }
+    //         }
+    //         , 0
+    //         , 0
+    //     );
+    // }
 
-    stop() {
-        clearTimeout(timerid);
-        this.is_playing = false;
-        document.getElementById("music_btn").innerText = "start";
-    }
+    // stop() {
+    //     clearTimeout(timerid);
+    //     this.is_playing = false;
+    //     document.getElementById("music_btn").innerText = "start";
+    // }
 }
