@@ -245,7 +245,7 @@ class Piano {
         let ct = [];
         let oct = this.piano_octave[0];
         ct.push(Note.names[chordtone[0]]+oct);
-        oct++;
+        oct = 4; //oct++;
         for (let i=1;i<chordtone.length;i++) {
             if (chordtone[i-1] > chordtone[i]) oct++;
             if (oct > this.piano_octave[this.piano_octave.length-1]) {

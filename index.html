@@ -67,6 +67,7 @@ function print_chord(chord_text, mark_piano_yn) {
     document.getElementById("chord").innerHTML = chord_text;
     cdtone = Chord.chordtone(chord_text);
     document.getElementById("chordtone").innerHTML = Note.num2name(cdtone).toString();
+    Piano.clear_piano();
     if (mark_piano_yn) {
         Piano.mark_piano(cdtone);
     }
