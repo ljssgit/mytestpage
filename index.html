@@ -212,22 +212,27 @@ function init_setting() {
     });
 }
 
+function get_checked_ids() {
+    let ids = [];
+    for (let i in nm_list) {
+        ids.push([]);
+        chks = document.getElementsByName("chk_"+ nm_list[i]);
+        for (let j in chks)
+            if (chks[j].checked)
+                ids[i].push(j);
+    }
+    return ids;
+}
+
 function change_mode(mode) {
     MODE = mode;
     clearTimeout(timerid);
     Piano.clear_piano();
-    chords = [];
+    let chords = [];
 
     if(cur_song_idx < 0) {
-        ids = [];
-        for (let i in nm_list) {
-            ids.push([]);
-            chks = document.getElementsByName("chk_"+ nm_list[i]);
-            for (let j in chks)
-                if (chks[j].checked)
-                    ids[i].push(j);
-        }
-        chords = Chord.rand_chords_generate(ids, 1000);
+        ids = get_checked_ids();
+        chords = Chord.rand_chords_generate(ids, 10000);
     }
     else {
         chords = songs[cur_song_idx].chord_list;
