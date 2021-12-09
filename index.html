@@ -7,7 +7,7 @@
 <script>
 let BPM = 50;
 let VOLUME = 50;
-let MODE = 2;
+let MODE = 1;
 let nm_list = ["note", "chordtone", "tension", "form"]
 let major_scale = [2, 2, 1, 2, 2, 2, 1];
 let songs = [];
@@ -84,8 +84,10 @@ function auto_print_chord() {
             if (PlayingChordList.isLast()) return;
 
             chord = PlayingChordList.next();
-            print_chord(chord, true);
-            timerid = setTimeout(timer, 1000*60/BPM);
+            mark_piano_yn = (MODE == 0);
+            print_chord(chord, mark_piano_yn);
+
+            if (BPM > 0) timerid = setTimeout(timer, 1000*60/BPM);
         }
         , 0
     );
@@ -162,7 +164,6 @@ function init_setting() {
     document.querySelector('#next_btn').addEventListener('click',function(){
         if (MODE == 0) {auto_print_chord();}
         else if (MODE == 1) {print_chord(PlayingChordList.next());}
-        else if (MODE == 2) {print_chord(PlayingChordList.next());}
         else {alert("오류 !");}
         //change_mode(MODE);
     });
@@ -175,7 +176,7 @@ function init_setting() {
     });
     // piano change
     piano.addEventListener('click',function(e){
-        if (MODE == 2) {
+        if (MODE == 1) {
             Piano.key_select(e.target.getAttribute("id"), false);
             if (is_correct()) {
                 for (i in Piano.selected_keys) {
@@ -214,6 +215,7 @@ function init_setting() {
 function change_mode(mode) {
     MODE = mode;
     clearTimeout(timerid);
+    Piano.clear_piano();
     chords = [];
 
     if(cur_song_idx < 0) {
@@ -233,25 +235,16 @@ function change_mode(mode) {
     PlayingChordList.setChords(chords);
 
     // 모드 0: 자동 코드
+    auto_print_chord();
     if (mode == 0) {
         document.getElementById("chordtone").style.display = "block";
         console.log("자동 모드 전환");
-
-        auto_print_chord();
     }
-    else {
-        // 모드 1: 수동 코드
-        if (mode == 1) {
-            document.getElementById("chordtone").style.display = "block";
-            console.log("수동 모드 전환");
-            print_chord(PlayingChordList.next());
-        }
-        // 모드 2: 맞추기
-        else if (mode == 2) {
-            //document.getElementById("chordtone").style.display = "none";
-            console.log("맞추기 모드 전환");
-            print_chord(PlayingChordList.next());
-        }
+    // 모드 2: 맞추기
+    else if (mode == 1) {
+        //document.getElementById("chordtone").style.display = "none";
+        console.log("맞추기 모드 전환");
+        //print_chord(PlayingChordList.next());
     }
 }
 
@@ -382,10 +375,7 @@ window.onload = function() {
                 <input type="radio" name="mode" id="mode_0" value="0" class="chk"/> 자동
             </label>
             <label for="mode_1">
-                <input type="radio" name="mode" id="mode_1" value="1" class="chk"/> 수동
-            </label>
-            <label for="mode_2">
-                <input type="radio" name="mode" id="mode_2" value="2" class="chk" checked="checked"/> 맞추기
+                <input type="radio" name="mode" id="mode_1" value="1" class="chk" checked="checked"/> 맞추기
             </label>
         </p>
         <input type="text" id="bpm" value="50" style="width:150px;height:50px;font-size:xx-large;text-align:center;"/>

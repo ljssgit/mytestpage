@@ -222,7 +222,7 @@ class Piano {
     }
 
     static clear_piano() {
-        for (i in this.selected_keys) {
+        for (let i in this.selected_keys) {
             let element = document.getElementById(this.selected_keys[i]);
             element.className = element.className.replace(/ selected_root_key| selected_key/, "");
             element.style.backgroundColor = "";
