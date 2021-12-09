@@ -32,9 +32,9 @@ class Note {
 }
 
 class Chord {
-    static chordtones = ["7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
-    static tensions = ["b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
-    static forms = [" [1전위]", " [2전위]"];
+    static chordtones = ["", "7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
+    static tensions = ["", "b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
+    static forms = ["", " [1전위]", " [2전위]"];
 
     constructor() {}
 
@@ -115,9 +115,11 @@ class Chord {
                     }
                 }
                 else {
-                    let rand_idx = Math.random()*(ids[i].length+1);
-                    if (parseInt(rand_idx) < ids[i].length)
-                        chord += list[i][ids[i][parseInt(rand_idx)]];
+                    // let rand_idx = Math.random()*(ids[i].length+1);
+                    // if (parseInt(rand_idx) < ids[i].length)
+                    //     chord += list[i][ids[i][parseInt(rand_idx)]];
+                    let rand_idx = Math.random()*(ids[i].length);
+                    chord += list[i][ids[i][parseInt(rand_idx)]];
                 }
             }
 
@@ -181,8 +183,8 @@ class Piano {
     static piano_octave = [2, 3, 4];
 
     static make_keys(piano_obj) {
-        for (i in this.piano_octave) {
-            for (j in Note.names) {
+        for (let i in this.piano_octave) {
+            for (let j in Note.names) {
                 let key = document.createElement("div");
                 let id = Note.names[j]+this.piano_octave[i]
                 key.setAttribute("id", id);
@@ -199,7 +201,7 @@ class Piano {
             this.piano_object = piano_obj;
         }
 
-        for (i in this.keys) {
+        for (let i in this.keys) {
             let fnm = this.keys[i].replace(/\#\(.*\)/, "-").toLowerCase();
             //let sound = new Audio("files/"+fnm+".ogg");
             let sound = new Audio("https://raw.githubusercontent.com/ljssgit/mytestpage/main/files/"+fnm+".ogg");
