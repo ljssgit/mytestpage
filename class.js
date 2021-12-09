@@ -330,7 +330,7 @@ class SheetMusic {
             let chord_split = chord_list[i].split(".");
             let chord = chord_split[0];
             if (chord_split.length > 1)
-                chord += Chord.forms[parseInt(chord_split[1])-1];
+                chord += Chord.forms[parseInt(chord_split[1])];
             
             this.chord_list.push(chord);
         }
