@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+<link rel="shortcut icon" href="#">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--<script type="module" src="./js/midi.js"></script>-->
+<style>
+    
+#piano {
+    /* display:grid;
+    place-content:center; */
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    /* left: 25%; */
+    /* transform: translateX(-50%); */
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<!--
+<script src="./js/JZZ/JZZ.js"></script>
+<script src="./js/JZZ/JZZ.input.Kbd.js"></script>
+<script src='./js/JZZ//JZZ.synth.MIDIjs.js'></script>
+<script src="./js/JZZ/JZZ.synth.Tiny.js"></script>
+-->
+<script src="https://cdn.jsdelivr.net/npm/jzz"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-input-kbd"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+</head>
+<body>
+    <p onclick="kbd.note(0, 'A#5', 127, 500);">
+        MIDI
+    </p>
+    <p id="piano"></p>
+</body>
+<script>
+var in_midi = JZZ.Widget({ _receive: function(msg) { emit(msg); }});
+JZZ.addMidiIn('Virtual_in', in_midi);
+
+JZZ.synth.Tiny.register('Web Audio');
+//sizes = [150, 42, 100, 24]
+sizes = [152, 38, 100, 24]
+ratio = 0.7
+for (i in sizes) sizes[i] = sizes[i]*ratio
+
+kbd = JZZ.input.Kbd({at:'piano', from:'C3', to:'D6',
+    wl:sizes[0], ww:sizes[1], bl:sizes[2], bw:sizes[3]
+    //    362:{to:'C6'}, // responsive parameters
+    //    404:{to:'D6'},
+    //    446:{to:'E6'},
+    //    488:{to:'F6'},
+    //    530:{to:'G6'},
+    //    572:{to:'A6'},
+    //    614:{to:'B6'},
+    //    656:{to:'C7'},
+    //    698:{to:'D7'},
+    //    740:{to:'E7'},
+    //    782:{to:'F7'},
+    //    824:{to:'G7'},
+    //    866:{to:'A7'},
+    //    908:{to:'B7'},
+    //    950:{to:'C8'},
+    //    992:{to:'D8'},
+    //   1034:{to:'E8'},
+    //   1076:{to:'F8'},
+    //   1118:{to:'G8'},
+    //   1160:{to:'A8'},
+    //   1202:{to:'B8'},
+    //   1244:{to:'C9'},
+    //   1286:{to:'D9'},
+    //   1328:{to:'E9'},
+    //   1370:{to:'F9'}
+    })
+    .or(function(){ alert('Cannot open MIDI In!\n' + this.err()); })
+    //.connect(JZZ().openMidiIn());
+    //.connect(JZZ().openMidiOut(/^((?!Midi Through).)*$/i));
+
+JZZ().or('Cannot start MIDI engine!')
+    .openMidiOut().or('Cannot open MIDI Out port!')
+    .and(function() { console.log('MIDI-In: ', this.name()); })
+    //.wait(500).send([0x90,60,127]) // note on
+    //.wait(500).send([0x80,60,0]);  // note off
+JZZ().openMidiIn().or('Cannot open MIDI In port!')
+    .and(function() { console.log('MIDI-In: ', this.name()); })
+
+var input = JZZ().openMidiIn();
+var output = JZZ().openMidiOut();
+//var delay = JZZ.Widget({ _receive: function(msg) { this.wait(1000).emit(msg); }});
+// input.connect(delay);
+// delay.connect(output);
+
+input.connect(kbd)
+kbd.connect(output)
+
+</script>
+</html>
