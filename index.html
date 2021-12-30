@@ -74,7 +74,7 @@ function is_correct() {
 
     document.getElementById("test").innerHTML = ct.toString() + " " + playing_notes.toString();
 
-    if (Math.max(playing_notes)%12 == ct[ct.length-1]) {
+    if (Math.max.apply(null, playing_notes)%12 == ct[ct.length-1]) {
         for (i in playing_notes) playing_notes[i] = playing_notes[i]%12;
         document.getElementById("test").innerHTML = ct.toString() + " " + playing_notes.toString();
         console.log(playing_notes.toString());
@@ -159,11 +159,9 @@ function init_setting() {
     });
     // piano click
     document.getElementById("piano").addEventListener('click',function(){
-        document.getElementById("next_btn").style.backgroundColor = "blue";
         if (is_correct()) {
             setTimeout(
                     function(){
-                        this.setAttribute("style", "");
                         //Piano.clear_piano();
                         print_chord(PlayingChordList.next());
                     }
