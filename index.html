@@ -75,8 +75,6 @@ function is_correct() {
     if (Math.max.apply(null, playing_notes)%12 == ct[ct.length-1]) {
         for (i in playing_notes) playing_notes[i] = playing_notes[i]%12;
 
-        playing_notes = ct;
-
         correct = true;
         for (i in ct) {
             if (playing_notes.indexOf(ct[i]) < 0) {
@@ -85,7 +83,7 @@ function is_correct() {
             }
         }
     }
-    
+
     return correct;
 }
 
