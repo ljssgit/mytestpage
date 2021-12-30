@@ -39,7 +39,7 @@
 var in_midi = JZZ.Widget({ _receive: function(msg) { emit(msg); }});
 JZZ.addMidiIn('Virtual_in', in_midi);
 
-JZZ.synth.Tiny.register('Web Audio');
+waudio = JZZ.synth.Tiny.register('Web Audio');
 //sizes = [150, 42, 100, 24]
 sizes = [152, 38, 100, 24]
 ratio = 0.7
@@ -91,8 +91,12 @@ var output = JZZ().openMidiOut();
 // input.connect(delay);
 // delay.connect(output);
 
-input.connect(kbd)
-kbd.connect(output)
+input.connect(kbd);
+kbd.connect(output);
+//kbd.connect(waudio);
+kbd.disconnect(output);
+output = JZZ().openMidiOut("Web Audio").or("MIDI Out Fail!").and("MIDI Out Success!");
+kbd.connect(output);
 
 </script>
 </html>
