@@ -72,8 +72,11 @@ function is_correct() {
 
     let playing_notes = MIDI.playing_notes();
 
+    document.getElementById("test").innerHTML = ct.toString() + " " + playing_notes.toString();
+
     if (Math.max(playing_notes)%12 == ct[ct.length-1]) {
         for (i in playing_notes) playing_notes[i] = playing_notes[i]%12;
+        document.getElementById("test").innerHTML = ct.toString() + " " + playing_notes.toString();
         console.log(playing_notes.toString());
 
         correct = true;
@@ -347,6 +350,9 @@ window.onload = function() {
     </div>
     <div id="chordtone" style="font-size:large;text-align:center">
         &nbsp;
+    </div>
+    <div id = "test">
+
     </div>
     <br/>
     <div id="piano">
