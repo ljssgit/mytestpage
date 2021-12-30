@@ -43,7 +43,19 @@ class MIDI {
 
         let input = JZZ().openMidiIn();
         let output = JZZ().openMidiOut();
-        let thru = JZZ.Widget({ _receive: function(msg) { this.emit(msg);is_correct(); }});
+        let thru = JZZ.Widget({ _receive: function(msg) {
+            this.emit(msg);
+            if (is_correct() == true) {
+                console.log("next");
+                setTimeout(
+                        function(){
+                            //Piano.clear_piano();
+                            print_chord(PlayingChordList.next());
+                        }
+                        , 1000
+                    );
+            }
+        }});
 
         input.connect(kbd);
         kbd.connect(thru);
