@@ -72,12 +72,10 @@ function is_correct() {
 
     let playing_notes = MIDI.playing_notes();
 
-    document.getElementById("test").innerHTML = ct.toString() + " " + playing_notes.toString();
-
     if (Math.max.apply(null, playing_notes)%12 == ct[ct.length-1]) {
         for (i in playing_notes) playing_notes[i] = playing_notes[i]%12;
-        document.getElementById("test").innerHTML = ct.toString() + " " + playing_notes.toString();
-        console.log(playing_notes.toString());
+
+        playing_notes = ct;
 
         correct = true;
         for (i in ct) {
@@ -87,7 +85,7 @@ function is_correct() {
             }
         }
     }
-
+    
     return correct;
 }
 
@@ -158,17 +156,17 @@ function init_setting() {
         })
     });
     // piano click
-    document.getElementById("piano").addEventListener('click',function(){
-        if (is_correct()) {
-            setTimeout(
-                    function(){
-                        //Piano.clear_piano();
-                        print_chord(PlayingChordList.next());
-                    }
-                    , 1000
-                );
-        }
-    });
+    // document.getElementById("piano").addEventListener('click',function(){
+    //     if (is_correct() == true) {
+    //         setTimeout(
+    //                 function(){
+    //                     //Piano.clear_piano();
+    //                     print_chord(PlayingChordList.next());
+    //                 }
+    //                 , 1000
+    //             );
+    //     }
+    // });
 
     //파일 업로드
     document.getElementById("file").addEventListener("change", (event) => {
@@ -348,9 +346,6 @@ window.onload = function() {
     </div>
     <div id="chordtone" style="font-size:large;text-align:center">
         &nbsp;
-    </div>
-    <div id = "test">
-
     </div>
     <br/>
     <div id="piano">
