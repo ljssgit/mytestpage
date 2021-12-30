@@ -49,7 +49,7 @@ class MIDI {
                 GlobalVar.timerid = setTimeout(
                     function(){
                         print_chord(PlayingChordList.next());
-                        timerid = null;
+                        GlobalVar.timerid = null;
                     }
                     , 1000
                 );
