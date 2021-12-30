@@ -45,15 +45,14 @@ class MIDI {
         let output = JZZ().openMidiOut();
         let thru = JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
-            if (is_correct() == true) {
-                console.log("next");
-                setTimeout(
-                        function(){
-                            //Piano.clear_piano();
-                            print_chord(PlayingChordList.next());
-                        }
-                        , 1000
-                    );
+            if (is_correct() == true && GlobalVar.timerid == null) {
+                GlobalVar.timerid = setTimeout(
+                    function(){
+                        print_chord(PlayingChordList.next());
+                        timerid = null;
+                    }
+                    , 1000
+                );
             }
         }});
 
