@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+<link rel="shortcut icon" href="#">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-input-kbd"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+<script src="./settings.js"></script>
+<script src="./js/class.js"></script>
+<script src="./js/midi.js"></script>
+<script>
+function print_chord(chord_text, play_yn) {
+    document.getElementById("chord").innerHTML = chord_text;
+    let type = 3;
+    if (chord_text.length > 1) {
+        if (chord_text[1] == "#") type = 1;
+        else if (chord_text[1] == "b") type = 2;
+    }
+    let cdtone = Chord.chordtone(chord_text);
+    let cdform = Chord.change_form(cdtone, is_random=true);
+    let cdtone_txts = Note.nums2names(cdtone, type=type);
+    let top_note = cdtone_txts[cdtone_txts.length-1];
+
+    // if (cdform == 0) var s = "전위 X";
+    // else var s = cdform + "전위";
+    // document.getElementById("chordform").innerHTML = `Top note : ${top_note}, [ ${s} ]`;
+
+    document.getElementById("chordform").innerHTML = `Top note : ${top_note}`;
+    document.getElementById("chordtone").innerHTML = cdtone_txts.join(", ");
+    Piano.clear_piano();
+    if (play_yn) {
+        //Piano.mark_piano(cdtone);
+    }
+}
+
+function auto_print_chord() {
+    clearTimeout(GlobalVar.timerid);
+
+    GlobalVar.timerid = setTimeout(
+        function timer() {
+            // if (idx < chord_arr.length) {
+            //     print_chord(chord_arr[idx], true);
+            //     setTimeout(timer, 1000*60/GlobalVar.BPM, idx+1);
+            // }
+            if (PlayingChordList.isLast()) {
+                if (cur_song_idx == -1) {
+                    ids = get_checked_ids();
+                    chords = Chord.rand_chords_generate(ids, 1000);
+                    PlayingChordList.setChords(chords);
+                }
+            }
+
+            chord = PlayingChordList.next();
+            play_yn = (GlobalVar.MODE == 0);
+            console.log(chord);
+            print_chord(chord, play_yn);
+
+            if (GlobalVar.BPM > 0) GlobalVar.timerid = setTimeout(timer, 1000*60/GlobalVar.BPM);
+        }
+        , 0
+    );
+}
+
+function is_correct() {
+    let correct = false;
+    let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
+    for (i in ct) ct[i] = JZZ.MIDI.noteValue(ct[i]+"5")%12;
+
+    let playing_notes = MIDI.playing_notes();
+
+    if (Math.max(playing_notes)%12 == ct[ct.length-1]) {
+        for (i in playing_notes) playing_notes[i] = playing_notes[i]%12;
+        console.log(playing_notes.toString());
+
+        correct = true;
+        for (i in ct) {
+            if (playing_notes.indexOf(ct[i]) < 0) {
+                correct = false;
+                break;
+            }
+        }
+    }
+
+    return correct;
+}
+
+function init_setting() {
+    let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.forms]
+
+    let set_div = document.getElementById("chord_settings");
+    //chord setting 생성
+    for (let i in list) {
+        let div_group = document.createElement("div");
+        div_group.setAttribute("id", "chord_setting_0")
+        div_group.setAttribute("class", "input-group mb-3")
+        for (let j in list[i]) {
+            // set_div.innerHTML +=
+            // "<label for='chk_"+ Chord.nm_list[i]+"_"+j +"' class='label_set'>"
+            // + "<input type='checkbox' class='chk' name='chk_"+Chord.nm_list[i]+"' value='"+j+"' id='chk_"+ Chord.nm_list[i]+"_"+j +"' checked='checked'> "
+            // + list[i][j] + "</label> "
+            // ;
+            let div = document.createElement("span");
+            div.setAttribute("class", "input-group-text");
+            // div.setAttribute("class", "form-check form-check-inline");
+            // div.setAttribute("class", "btn-group");
+            // div.setAttribute("role", "group");
+            // div.setAttribute("aria-label", "Basic checkbox toggle button group")
+            let checkbox = document.createElement("input");
+            checkbox.setAttribute("type", "checkbox");
+            checkbox.setAttribute("class", "form-check-input");
+            // checkbox.setAttribute("class", "btn-check");
+            checkbox.setAttribute("name", "chk_"+Chord.nm_list[i]);
+            checkbox.setAttribute("value", ""+j);
+            checkbox.setAttribute("id", "chk_"+ Chord.nm_list[i]+"_"+j);
+            checkbox.setAttribute("checked", "checked");
+            checkbox.setAttribute("autocomplete", "off");
+            let label = document.createElement("label");
+            label.setAttribute("for", "chk_" + Chord.nm_list[i] + "_" + j);
+            label.setAttribute("class", "form-check-label");
+            // label.setAttribute("class", "btn btn-outline-primary");
+            div.appendChild(checkbox);
+            div.appendChild(label);
+
+            if (list[i][j] == "")
+                label.innerHTML += "&nbsp;없음";
+            else
+                label.innerHTML += "&nbsp;" + list[i][j];
+            div_group.appendChild(div);
+        }
+        set_div.appendChild(div_group);
+        //set_div.appendChild(document.createElement("br"));
+    }
+
+    //초기값설정
+    chks = document.getElementsByName("chk_tension");
+    for (j in chks) chks[j].checked = false;
+
+    // 이벤트 리스너 설정
+    // next btn
+    document.querySelector('#next_btn').addEventListener('click',function(){
+        if (GlobalVar.MODE == 0) {auto_print_chord();}
+        else if (GlobalVar.MODE == 1) {print_chord(PlayingChordList.next());}
+        else {alert("오류 !");}
+        //change_mode(GlobalVar.MODE);
+    });
+    // mode change
+    document.getElementsByName("mode").forEach((elem) => {
+        elem.addEventListener('change',function(){
+            //change_mode(this.value);
+            GlobalVar.MODE = this.value;
+        })
+    });
+    // piano click
+    document.getElementById("piano").addEventListener('click',function(){
+        document.getElementById("next_btn").style.backgroundColor = "blue";
+        if (is_correct()) {
+            setTimeout(
+                    function(){
+                        this.setAttribute("style", "");
+                        //Piano.clear_piano();
+                        print_chord(PlayingChordList.next());
+                    }
+                    , 1000
+                );
+        }
+    });
+
+    //파일 업로드
+    document.getElementById("file").addEventListener("change", (event) => {
+        const file = event.target.files[0]; // file 객체
+        const reader = new FileReader(); // fileReader 생성
+        reader.readAsText(file);
+        reader.onload = function (e) {
+        // load 이벤트의 핸들러. 이 이벤트는 읽기 동작이 성공적으로 완료 되었을 때마다 발생
+            GlobalVar.songs.push(new SheetMusic(e.target.result.split(/\s+/)));
+            GlobalVar.cur_song_idx = GlobalVar.songs.length-1;
+            PlayingChordList.setChords(GlobalVar.songs[GlobalVar.cur_song_idx]);
+        }
+        reader.onerror = function (e) {
+            GlobalVar.cur_song_idx = -1;
+            change_mode(GlobalVar.MODE);
+        }
+    });
+}
+
+function get_checked_ids() {
+    let ids = [];
+    for (let i in Chord.nm_list) {
+        ids.push([]);
+        chks = document.getElementsByName("chk_"+ Chord.nm_list[i]);
+        for (let j in chks)
+            if (chks[j].checked)
+                ids[i].push(j);
+    }
+    return ids;
+}
+
+function change_mode(mode) {
+    GlobalVar.MODE = mode;
+    clearTimeout(GlobalVar.timerid);
+    //Piano.clear_piano();
+    let chords = [];
+
+    if(GlobalVar.cur_song_idx < 0) {
+        ids = get_checked_ids();
+        chords = Chord.rand_chords_generate(ids, 1000);
+    }
+    else {
+        chords = GlobalVar.songs[GlobalVar.cur_song_idx].chord_list;
+    }
+    PlayingChordList.setChords(chords);
+
+    // 모드 0: 자동 코드
+    auto_print_chord();
+    if (mode == 0) {
+        document.getElementById("chordtone").style.display = "block";
+        console.log("자동 모드 전환");
+    }
+    // 모드 2: 맞추기
+    else if (mode == 1) {
+        //document.getElementById("chordtone").style.display = "none";
+        console.log("맞추기 모드 전환");
+        //print_chord(PlayingChordList.next());
+    }
+}
+
+function change_setting() {
+    GlobalVar.VOLUME=document.getElementById('volume').value;
+    GlobalVar.BPM = document.getElementById("bpm").value;
+
+    msgs = JZZ.MIDI.volumeF(0, GlobalVar.VOLUME/100);
+    MIDI.output.send(msgs[0]);
+    MIDI.output.send(msgs[1]);
+
+    change_mode(GlobalVar.MODE);
+}
+
+window.onload = function() {
+    // oct = make_scale("C");
+    // nm = Note.num2name(oct);
+    //
+    // dv = document.getElementById("chord");
+    // dv.innerHTML = "C Major Scale : " + nm.toString() + "<br/>";
+    //
+    // chord = "DmM7 [A form]"
+    // ct = Note.num2name(Chord.chordtone(chord));
+    // dv.innerHTML += chord + ct.toString() + "<br/>";
+    
+    init_setting();
+    change_mode(GlobalVar.MODE);
+    MIDI.init();
+
+    // song1 = new SheetMusic(["A#(Bb)", "-", "Cm7.2", "-","Dm7.1" ,"-" , "Gm7", "-"]);
+    // GlobalVar.songs.push(song1);
+
+    //setBPM();
+}
+
+</script>
+<style>
+#piano {
+    /* display:grid;
+    place-content:center; */
+
+    /* display:flex;
+    justify-content: center;
+    align-items: center;
+    */
+    position:absolute;
+    /* margin:0 auto; */
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    
+    /* left: 25%; */
+    /* transform: translateX(-50%); */
+}
+.top_right_btns {
+    position:absolute;
+    right:0;
+}
+</style>
+</head>
+<body>
+    <div class="top_right_btns">
+        <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearTimeout(GlobalVar.timerid);"
+            data-bs-toggle="offcanvas" data-bs-target="#offcanvasTop" aria-controls="offcanvasTop">
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16">
+                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+            </svg>
+        </button>
+        <button type="button" id="next_btn" class="btn btn-secondary" style="float:right;margin-right:5px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-chevron-double-right" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M3.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L9.293 8 3.646 2.354a.5.5 0 0 1 0-.708z"/>
+                <path fill-rule="evenodd" d="M7.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L13.293 8 7.646 2.354a.5.5 0 0 1 0-.708z"/>
+            </svg>
+        </button>
+    </div>
+    <div class="offcanvas offcanvas-top" tabindex="-1" id="offcanvasTop" aria-labelledby="offcanvasTopLabel" style="height:100%">
+        <div class="offcanvas-header" style="margin:0;padding-bottom:0">
+            <h5 id="offcanvasTopLabel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16">
+                    <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+                    <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
+                  </svg>
+                설정
+            </h5>
+            <button type="button" id="btn_close" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" onclick="change_setting()"></button>
+        </div>
+        <div id="setting" class="offcanvas-body">
+            <div class="input-group mb-3">
+                <span class="input-group-text" id="basic-addon1">모드</span>
+                
+                <select class="form-select" id="mode-select" name="mode">
+                    <option value="0">자동재생</option>
+                    <option value="1" selected>맞추기</option>
+                </select>
+                <span class="input-group-text" id="basic-addon1">BPM</span>
+                <input type="text" id="bpm" class="form-control" placeholder="0 : 수동" aria-label="Username" aria-describedby="basic-addon1" value="0">
+                <span class="input-group-text" id="basic-addon2">Volume</span>
+                <!--<input type="text" id="volume" class="form-control" placeholder="0 ~ 100" aria-label="Username" aria-describedby="basic-addon1" value="50">-->
+                <span class="input-group-text" id="basic-addon3" style="background-color: white;">
+                    <input type="range" id="volume" min="0" max="100" style="margin-left:5px;">
+                </span>
+                
+            </div>
+            <hr />
+            <div id="chord_settings">
+            </div>
+            <hr />
+            <div class="input-group mb-3">
+                <label class="input-group-text" for="inputGroupFile01">MIDI FILE</label>
+                <input type='file' class="form-control" id="file"/>
+            </div>
+            
+        </div>
+      </div>
+    <div id="chord" style="font-size:xxx-large;text-align:center">
+        &nbsp;
+    </div>
+    <div id="chordform" style="font-size:xx-large;text-align:center">
+        &nbsp;
+    </div>
+    <div id="chordtone" style="font-size:large;text-align:center">
+        &nbsp;
+    </div>
+    <br/>
+    <div id="piano">
+    </div>
+</body>
+</html>
