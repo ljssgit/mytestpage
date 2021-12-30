@@ -45,11 +45,13 @@ class MIDI {
         let output = JZZ().openMidiOut();
         let thru = JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
-            if (is_correct() == true && GlobalVar.timerid == null) {
+            if (is_correct() && GlobalVar.timerid == null) {
+                document.getElementById("chord").style.color = "blue";
                 GlobalVar.timerid = setTimeout(
                     function(){
                         print_chord(PlayingChordList.next());
                         GlobalVar.timerid = null;
+                        document.getElementById("chord").style.color = "";
                     }
                     , 1000
                 );
