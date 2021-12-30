@@ -68,6 +68,7 @@ class MIDI {
         this.output=output;
 
         this.changeMidiOut("Web Audio");
+        thru.connect(output);
     }
 
     static playing_notes() {
