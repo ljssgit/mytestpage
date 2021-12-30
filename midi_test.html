@@ -30,13 +30,13 @@
 <script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
 </head>
 <body>
-    <p onclick="kbd.note(0, 'A#5', 127, 500);">
+    <p onclick="in_midi.note(0, 'A#5', 127, 500);">
         MIDI
     </p>
     <p id="piano"></p>
 </body>
 <script>
-var in_midi = JZZ.Widget({ _receive: function(msg) { emit(msg); }});
+var in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
 JZZ.addMidiIn('Virtual_in', in_midi);
 
 waudio = JZZ.synth.Tiny.register('Web Audio');
@@ -79,7 +79,7 @@ kbd = JZZ.input.Kbd({at:'piano', from:'C3', to:'D6',
 
 JZZ().or('Cannot start MIDI engine!')
     .openMidiOut().or('Cannot open MIDI Out port!')
-    .and(function() { console.log('MIDI-In: ', this.name()); })
+    .and(function() { console.log('MIDI-Out: ', this.name()); })
     //.wait(500).send([0x90,60,127]) // note on
     //.wait(500).send([0x80,60,0]);  // note off
 JZZ().openMidiIn().or('Cannot open MIDI In port!')
