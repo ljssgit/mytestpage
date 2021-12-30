@@ -36,10 +36,10 @@ class MIDI {
             .or(function(){ alert('Cannot open MIDI In!\n' + this.err()); })
 
         JZZ().or('Cannot start MIDI engine!')
-            .openMidiOut().or('Cannot open MIDI Out port!')
+            .openMidiIn().or('Cannot open MIDI In port!')
             .and(function() { console.log('MIDI-In: ', this.name()); })
-        JZZ().openMidiIn().or('Cannot open MIDI In port!')
-            .and(function() { console.log('MIDI-In: ', this.name()); })
+        JZZ().openMidiOut().or('Cannot open MIDI Out port!')
+            .and(function() { console.log('MIDI-Out: ', this.name()); })
 
         let input = JZZ().openMidiIn();
         let output = JZZ().openMidiOut();
@@ -64,6 +64,8 @@ class MIDI {
         this.kbd=kbd;
         this.thru=thru;
         this.output=output;
+
+        this.changeMidiOut("Web Audio");
     }
 
     static playing_notes() {
@@ -73,5 +75,25 @@ class MIDI {
             if (typeof notes[i] != "undefined")
                 playing_notes.push(i);
         return playing_notes;
+    }
+
+    // static changeMidiIn(name) {
+    //     var name = selectMidiIn.options[selectMidiIn.selectedIndex].value;
+    //     if (name == midiInName) return;
+    //     if (midiInPort) midiInPort.disconnect(through);
+    //     if (name == 'HTML Piano') {
+    //     if (midiInPort) midiInPort.close();
+    //     midiInPort = piano;
+    //     midiInPort.connect(through);
+    //     midiInName = name;
+    //     }
+    //     else JZZ().openMidiIn(name).or(onMidiInFail).and(onMidiInSuccess);
+    // }
+    
+    static changeMidiOut(name) {
+        if (name == this.output.name()) return;
+        if (this.output) this.thru.disconnect(this.output);
+        
+        this.output = JZZ().openMidiOut(name).or("MIDI Out Fail!").and("MIDI Out Success!");
     }
 }
