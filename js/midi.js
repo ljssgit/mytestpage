@@ -35,11 +35,26 @@ class MIDI {
             })
             .or(function(){ alert('Cannot open MIDI In!\n' + this.err()); })
 
-        JZZ().or('Cannot start MIDI engine!')
-            .openMidiIn().or('Cannot open MIDI In port!')
-            .and(function() { console.log('MIDI-In: ', this.name()); })
-        JZZ().openMidiOut().or('Cannot open MIDI Out port!')
-            .and(function() { console.log('MIDI-Out: ', this.name()); })
+        JZZ().and(function(){
+            var i;
+            var selectMidiIn = document.getElementById('selectmidiin');
+            var selectMidiOut = document.getElementById('selectmidiout');
+            for (i = 0; i < this.info().outputs.length; i++) {
+                selectMidiOut[i] = new Option(this.info().outputs[i].name);
+            }
+            if (!i) {
+                selectMidiOut[i] = new Option('Not available');
+            }
+            for (i = 0; i < this.info().inputs.length; i++) {
+                selectMidiIn[i] = new Option(this.info().inputs[i].name);
+                selectMidiIn[i].selected = 1;
+            }
+            //selectMidiIn[i] = new Option('HTML Piano');
+            //selectMidiIn[i].selected = 1;
+        });
+            
+        // JZZ().openMidiOut().or(MIDI.onMidiOutFail).and(MIDI.onMidiOutSuccess);
+        // JZZ().openMidiIn().or(MIDI.onMidiInFail).and(MIDI.onMidiInSuccess);              
 
         let input = JZZ().openMidiIn();
         let output = JZZ().openMidiOut('Web Audio');//JZZ().openMidiOut();
@@ -93,10 +108,62 @@ class MIDI {
     //     else JZZ().openMidiIn(name).or(onMidiInFail).and(onMidiInSuccess);
     // }
     
+    static changeMidiIn() {
+        var name = selectMidiIn.options[selectMidiIn.selectedIndex].value;
+        if (name == this.input.name()) return;
+        if (input) input.disconnect(kbd);
+        // if (name == 'Virtual_in') {
+        //     if (midiInPort) midiInPort.close();
+        //     midiInPort = piano;
+        //     midiInPort.connect(through);
+        //     midiInName = name;
+        // }
+        JZZ().openMidiIn(name).or(MIDI.onMidiInFail).and(MIDI.onMidiInSuccess);
+    }
+
     static changeMidiOut(name) {
         if (name == this.output.name()) return;
         if (this.output) this.thru.disconnect(this.output);
         
-        this.output = JZZ().openMidiOut(name).or("MIDI Out Fail!").and("MIDI Out Success!");
+        this.output = JZZ().openMidiOut(name).or(MIDI.onMidiOutFail).and(MIDI.onMidiOutSuccess);
     }
+    
+    static setListbox(lb, s) {
+        for (var i = 0; i < lb.options.length; i++) if (lb.options[i].value == s) lb.options[i].selected = 1;
+    }
+
+    static onMidiOutSuccess() {
+        if (MIDI.output) {
+            MIDI.output.close();
+        }
+        MIDI.output = this;
+        MIDI.thru.connect(this);
+        midiOutName = this.name();
+        selectMidiOut = document.getElementById('selectmidiin');
+        MIDI.setListbox(selectMidiOut, midiOutName);
+    }
+    
+    static onMidiOutFail() {
+        if (MIDI.output) MIDI.thru.connect(MIDI.output);
+        midiOutName = this.name();
+        selectMidiOut = document.getElementById('selectmidiin');
+        MIDI.setListbox(selectMidiOut, midiOutName);
+    }
+    
+    static onMidiInSuccess() {
+        if (MIDI.input && MIDI.input != MIDI.kbd) {
+            midiInPort.close();
+        }
+        midiInPort = this;
+        this.connect(MIDI.kbd);
+        midiInName = this.name();
+        selectMidiOut = document.getElementById('selectmidiin');
+        MIDI.setListbox(selectMidiIn, midiInName);
+    }
+    
+    static onMidiInFail() {
+        if (MIDI.input) MIDI.input.connect(MIDI.kbd);
+        MIDI.setListbox(selectMidiIn, midiInName);
+    }
+  
 }
