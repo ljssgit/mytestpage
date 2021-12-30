@@ -42,7 +42,7 @@ class MIDI {
             .and(function() { console.log('MIDI-Out: ', this.name()); })
 
         let input = JZZ().openMidiIn();
-        let output = JZZ().openMidiOut();
+        let output = JZZ().openMidiOut('Web Audio');//JZZ().openMidiOut();
         let thru = JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
             if (is_correct() && GlobalVar.timerid == null) {
@@ -67,8 +67,8 @@ class MIDI {
         this.thru=thru;
         this.output=output;
 
-        this.changeMidiOut("Web Audio");
-        thru.connect(output);
+        // this.changeMidiOut("Web Audio");
+        // thru.connect(output);
     }
 
     static playing_notes() {
