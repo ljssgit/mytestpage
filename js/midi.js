@@ -24,9 +24,9 @@ class MIDI {
             // 610: { to: 'B5' },
             650: { to: 'E6' },
             900: { to: 'B6' },
-            1200: { from: 'C2' , to:'B6'},
-            //1200: { to: 'B7' },
-            1500: { from: 'C2' ,to: 'B7' },
+            //1200: { from: 'C2' , to:'B6'},
+            //1200: { to: 'B6' },
+            //1500: { from: 'C2' ,to: 'B7' },
             // onCreate: function() {
             //     this.getKeys().setStyle({ margin:0, borderColor:'#00f' });
             //     this.getBlackKeys().setStyle({ backgroundColor:'#c0c' }, {});
