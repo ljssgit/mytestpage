@@ -45,6 +45,7 @@ class Chord {
     static nm_list = ["note", "chordtone", "tension", "form"];
     static chordtones = ["", "7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
     static tensions = ["", "b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
+    static forms = ["", "전위"];
 
     constructor() {}
 
@@ -106,12 +107,12 @@ class Chord {
 
     // ids = [note_ids, add_ids, tension_ids, form_ids]
     static rand_chords_generate(ids, size=1) {
-        let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.forms]
+        let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.forms];
         let rand_chords = [];
         for (let arr_idx=0;arr_idx<size;arr_idx++) {
             let chord = "";
             //let chk_ids = [[], [], [], []]
-            for (let i in ids) {
+            for (let i=0;i<ids.length-1;i++) {
                 if (ids[i].length==0) continue;
                 if (i==0) {
                     let rand_idx = Math.random()*ids[i].length;
