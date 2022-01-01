@@ -42,6 +42,7 @@ class Note {
 }
 
 class Chord {
+    
     static nm_list = ["note", "chordtone", "tension", "form"];
     static chordtones = ["", "7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
     static tensions = ["", "b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
