@@ -21,7 +21,7 @@ function print_chord(chord_text, play_yn) {
         else if (chord_text[1] == "b") type = 2;
     }
     let cdtone = Chord.chordtone(chord_text);
-    let cdform = Chord.change_form(cdtone, is_random=true);
+    let cdform = Chord.change_form(cdtone, is_random=document.getElementById("chk_form_1").checked);
     let cdtone_txts = Note.nums2names(cdtone, type=type);
     let top_note = cdtone_txts[cdtone_txts.length-1];
 
@@ -94,7 +94,7 @@ function init_setting() {
     //chord setting 생성
     for (let i in list) {
         let div_group = document.createElement("div");
-        div_group.setAttribute("id", "chord_setting_0")
+        div_group.setAttribute("id", "chord_setting_"+i)
         div_group.setAttribute("class", "input-group mb-3")
         for (let j in list[i]) {
             // set_div.innerHTML +=
