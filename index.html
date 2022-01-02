@@ -31,20 +31,33 @@ function print_chord(chord_text, play_yn) {
 
     document.getElementById("chordform").innerHTML = `Top note : <b>${top_note}</b>`;
     document.getElementById("chordtone").innerHTML = cdtone_txts.join(", ");
-    Piano.clear_piano();
+    //Piano.clear_piano();
+    
     if (play_yn) {
         //Piano.mark_piano(cdtone);
+    }
+    
+    clearInterval(GlobalVar.timerid);
+    if (GlobalVar.MODE == 1) {
+        let start_time = Date.now();
+        GlobalVar.timerid = setInterval(
+            function(stime){
+                elapse = Date.now() - stime;
+                document.getElementById("time").innerText = (elapse / 1000).toFixed(1);
+            },
+            100,
+            start_time,
+        )
     }
 }
 
 function auto_print_chord() {
     clearTimeout(GlobalVar.chord_timerid);
-    clearInterval(GlobalVar.timerid);
 
     GlobalVar.chord_timerid = setTimeout(
         function timer() {
             GlobalVar.chord_timerid = null;
-            clearInterval(GlobalVar.timerid);
+            GlobalVar.timerid = null;
             // if (idx < chord_arr.length) {
             //     print_chord(chord_arr[idx], true);
             //     setTimeout(timer, 1000*60/GlobalVar.BPM, idx+1);
@@ -60,17 +73,6 @@ function auto_print_chord() {
             let chord = PlayingChordList.next();
             let play_yn = (GlobalVar.MODE == 0);
             print_chord(chord, play_yn);
-            if (GlobalVar.MODE == 1) {
-                let start_time = Date.now();
-                GlobalVar.timerid = setInterval(
-                    function(stime){
-                        elapse = Date.now() - stime;
-                        document.getElementById("time").innerText = (elapse / 1000).toFixed(1);
-                    },
-                    100,
-                    start_time,
-                )
-            }
 
             if (GlobalVar.BPM > 0) GlobalVar.chord_timerid = setTimeout(timer, 1000*60/GlobalVar.BPM);
         }
@@ -88,6 +90,7 @@ function is_correct() {
     if (Math.max.apply(null, playing_notes)%12 == ct[ct.length-1]) {
         for (i in playing_notes) playing_notes[i] = playing_notes[i]%12;
 
+        playing_notes = ct;
         correct = true;
         for (i in ct) {
             if (playing_notes.indexOf(ct[i]) < 0) {
@@ -227,16 +230,16 @@ function change_mode(mode) {
     PlayingChordList.setChords(chords);
 
     // 모드 0: 자동 코드
-    auto_print_chord();
     if (mode == 0) {
         document.getElementById("chordtone").style.display = "block";
         console.log("자동 모드 전환");
+        auto_print_chord();
     }
     // 모드 2: 맞추기
     else if (mode == 1) {
         //document.getElementById("chordtone").style.display = "none";
         console.log("맞추기 모드 전환");
-        //print_chord(PlayingChordList.next());
+        print_chord(PlayingChordList.next());
     }
 }
 
