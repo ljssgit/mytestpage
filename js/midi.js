@@ -41,13 +41,16 @@ class MIDI {
 
         let thru = JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
-            if (is_correct() && GlobalVar.timerid == null) {
+            if (is_correct() && GlobalVar.chord_timerid == null) {
+                clearInterval(GlobalVar.timerid);
                 document.getElementById("chord").style.color = "blue";
-                GlobalVar.timerid = setTimeout(
+                document.getElementById("time").style.color = "blue";
+                GlobalVar.chord_timerid = setTimeout(
                     function(){
                         print_chord(PlayingChordList.next());
-                        GlobalVar.timerid = null;
+                        GlobalVar.chord_timerid = null;
                         document.getElementById("chord").style.color = "";
+                        document.getElementById("time").style.color = "";
                     }
                     , 1000
                 );

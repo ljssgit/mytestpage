@@ -6,4 +6,5 @@ class GlobalVar {
     static songs = [];
     static cur_song_idx = -1;
     static timerid = null;
+    static chord_timerid = null;
 }
