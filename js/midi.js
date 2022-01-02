@@ -8,11 +8,13 @@ class MIDI {
 
     static init() {
         let default_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
-        JZZ.addMidiIn('None', default_in_midi);
         let default_out_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
+        let synth_name = "Web Audio";
+
+        JZZ.addMidiIn('None', default_in_midi);
+        JZZ.synth.Tiny.register(synth_name);
         JZZ.addMidiOut('None', default_out_midi);
 
-        JZZ.synth.Tiny.register('Web Audio');
         //sizes = [150, 42, 100, 24]
         let sizes = [152, 38, 100, 24]
         let ratio = 0.7
@@ -38,20 +40,24 @@ class MIDI {
             .or(function(){ alert('Cannot open KeyBoard!\n' + this.err()); })
 
         JZZ().and(function(){
-            var i;
-            var selectMidiIn = document.getElementById('selectmidiin');
-            var selectMidiOut = document.getElementById('selectmidiout');
+            let i;
+            let selectMidiIn = document.getElementById('selectmidiin');
+            let selectMidiOut = document.getElementById('selectmidiout');
+            
             for (i = 0; i < this.info().outputs.length; i++) {
-                selectMidiOut[i] = new Option(this.info().outputs[i].name);
+                let reverse_idx = this.info().outputs.length-i-1;
+                selectMidiOut[i] = new Option(this.info().outputs[reverse_idx].name);
             }
             selectMidiOut[1].selected = 1;
             if (!i) {
                 selectMidiOut[i] = new Option('Not available');
             }
             for (i = 0; i < this.info().inputs.length; i++) {
-                selectMidiIn[i] = new Option(this.info().inputs[i].name);
-                selectMidiIn[i].selected = 1;
+                let reverse_idx = this.info().inputs.length-i-1;
+                selectMidiIn[i] = new Option(this.info().inputs[reverse_idx].name);
             }
+            selectMidiIn[i-1].selected = 1;
+            
             //selectMidiIn[i] = new Option('HTML Piano');
             //selectMidiIn[i].selected = 1;
 
@@ -63,7 +69,7 @@ class MIDI {
         // JZZ().openMidiIn().or(MIDI.onMidiInFail).and(MIDI.onMidiInSuccess);              
 
         let input = JZZ().openMidiIn();
-        let output = JZZ().openMidiOut('Web Audio');//JZZ().openMidiOut();
+        let output = JZZ().openMidiOut(synth_name);//JZZ().openMidiOut();
         let thru = JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
             if (is_correct() && GlobalVar.timerid == null) {
