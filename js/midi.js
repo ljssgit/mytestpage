@@ -1,8 +1,8 @@
 class MIDI {
-    static input;
-    static kbd;
-    static thru;
-    static output;
+    static input = undefined;
+    static kbd = undefined;
+    static thru = undefined;
+    static output = undefined;
 
     constructor(){}
 
@@ -10,9 +10,9 @@ class MIDI {
         let default_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
         let default_out_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
         let synth_name = "Web Audio";
+        let synth = JZZ.synth.Tiny.register(synth_name);
 
         JZZ.addMidiIn('None', default_in_midi);
-        JZZ.synth.Tiny.register(synth_name);
         JZZ.addMidiOut('None', default_out_midi);
 
         //sizes = [150, 42, 100, 24]
@@ -39,6 +39,30 @@ class MIDI {
             })
             .or(function(){ alert('Cannot open KeyBoard!\n' + this.err()); })
 
+        let thru = JZZ.Widget({ _receive: function(msg) {
+            this.emit(msg);
+            if (is_correct() && GlobalVar.timerid == null) {
+                document.getElementById("chord").style.color = "blue";
+                GlobalVar.timerid = setTimeout(
+                    function(){
+                        print_chord(PlayingChordList.next());
+                        GlobalVar.timerid = null;
+                        document.getElementById("chord").style.color = "";
+                    }
+                    , 1000
+                );
+            }
+        }});
+
+        this.input = default_in_midi;
+        this.kbd=kbd;
+        this.thru=thru;
+        this.output = default_out_midi;
+
+        default_in_midi.connect(kbd);
+        kbd.connect(thru);
+        thru.connect(default_out_midi)
+
         JZZ().and(function(){
             let i;
             let selectMidiIn = document.getElementById('selectmidiin');
@@ -63,39 +87,13 @@ class MIDI {
 
             selectMidiIn.addEventListener('change', MIDI.changeMidiIn);
             selectMidiOut.addEventListener('change', MIDI.changeMidiOut);
-        });
+        }).and(function() {
+            MIDI.changeMidiOut();
+            MIDI.changeMidiIn();
+        });;
             
         // JZZ().openMidiOut().or(MIDI.onMidiOutFail).and(MIDI.onMidiOutSuccess);
-        // JZZ().openMidiIn().or(MIDI.onMidiInFail).and(MIDI.onMidiInSuccess);              
-
-        let input = JZZ().openMidiIn();
-        let output = JZZ().openMidiOut(synth_name);//JZZ().openMidiOut();
-        let thru = JZZ.Widget({ _receive: function(msg) {
-            this.emit(msg);
-            if (is_correct() && GlobalVar.timerid == null) {
-                document.getElementById("chord").style.color = "blue";
-                GlobalVar.timerid = setTimeout(
-                    function(){
-                        print_chord(PlayingChordList.next());
-                        GlobalVar.timerid = null;
-                        document.getElementById("chord").style.color = "";
-                    }
-                    , 1000
-                );
-            }
-        }});
-
-        input.connect(kbd);
-        kbd.connect(thru);
-        thru.connect(output);
-
-        this.input=input;
-        this.kbd=kbd;
-        this.thru=thru;
-        this.output=output;
-
-        // this.changeMidiOut("Web Audio");
-        // thru.connect(output);
+        // JZZ().openMidiIn().or(MIDI.onMidiInFail).and(MIDI.onMidiInSuccess);
     }
 
     static playing_notes() {
