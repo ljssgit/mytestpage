@@ -87,10 +87,11 @@ function is_correct() {
 
     let playing_notes = MIDI.playing_notes();
 
-    if (Math.max.apply(null, playing_notes)%12 == ct[ct.length-1]) {
+    if (Math.max.apply(null, playing_notes)%12 == ct[ct.length-1]
+    &&  Math.min.apply(null, playing_notes)%12 == ct[0]) {
         for (i in playing_notes) playing_notes[i] = playing_notes[i]%12;
 
-        playing_notes = ct;
+        //playing_notes = ct;
         correct = true;
         for (i in ct) {
             if (playing_notes.indexOf(ct[i]) < 0) {
