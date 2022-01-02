@@ -137,7 +137,7 @@ class Chord {
 
     static change_form(chordtones, is_random=false, num=0) {
         let change_cnt = 0;
-        if (is_random) num = parseInt(Math.random()*(chordtones.length-2));
+        if (is_random) num = parseInt(Math.random()*(chordtones.length-1));
         for (let i=0;i<num;i++) {
             chordtones.splice(1, 0, chordtones.pop());
             change_cnt++;
