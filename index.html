@@ -21,7 +21,8 @@ function print_chord(chord_text, play_yn) {
         else if (chord_text[1] == "b") type = 2;
     }
     let cdtone = Chord.chordtone(chord_text);
-    let cdform = Chord.change_form(cdtone, is_random=document.getElementById("chk_form_1").checked);
+    if (document.getElementById("chk_form_0").checked) var num=-1;
+    let cdform = Chord.change_form(cdtone, is_random=document.getElementById("chk_form_1").checked, num=num);
     let cdtone_txts = Note.nums2names(cdtone, type=type);
     let top_note = cdtone_txts[cdtone_txts.length-1];
 
