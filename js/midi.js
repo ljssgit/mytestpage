@@ -7,14 +7,16 @@ class MIDI {
     constructor(){}
 
     static init() {
-        let in_midi = JZZ.Widget({ _receive: function(msg) { console.log(msg);emit(msg); }});
-        JZZ.addMidiIn('Virtual_in', in_midi);
+        let default_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
+        JZZ.addMidiIn('None', default_in_midi);
+        let default_out_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
+        JZZ.addMidiOut('None', default_out_midi);
 
         JZZ.synth.Tiny.register('Web Audio');
         //sizes = [150, 42, 100, 24]
         let sizes = [152, 38, 100, 24]
         let ratio = 0.7
-        for (let i in sizes) sizes[i] = sizes[i]*ratio
+        for (let i in sizes) sizes[i] = sizes[i]*ratio;
 
         let kbd = JZZ.input.Kbd({at:'piano', from:'C3', to:'B5',
             wl:sizes[0], ww:sizes[1], bl:sizes[2], bw:sizes[3],
@@ -33,7 +35,7 @@ class MIDI {
             //     this.getWhiteKeys().setStyle({ backgroundColor:'#fef' }, {});
             // },
             })
-            .or(function(){ alert('Cannot open MIDI In!\n' + this.err()); })
+            .or(function(){ alert('Cannot open KeyBoard!\n' + this.err()); })
 
         JZZ().and(function(){
             var i;
@@ -42,6 +44,7 @@ class MIDI {
             for (i = 0; i < this.info().outputs.length; i++) {
                 selectMidiOut[i] = new Option(this.info().outputs[i].name);
             }
+            selectMidiOut[1].selected = 1;
             if (!i) {
                 selectMidiOut[i] = new Option('Not available');
             }
@@ -51,6 +54,9 @@ class MIDI {
             }
             //selectMidiIn[i] = new Option('HTML Piano');
             //selectMidiIn[i].selected = 1;
+
+            selectMidiIn.addEventListener('change', MIDI.changeMidiIn);
+            selectMidiOut.addEventListener('change', MIDI.changeMidiOut);
         });
             
         // JZZ().openMidiOut().or(MIDI.onMidiOutFail).and(MIDI.onMidiOutSuccess);
@@ -109,9 +115,10 @@ class MIDI {
     // }
     
     static changeMidiIn() {
-        var name = selectMidiIn.options[selectMidiIn.selectedIndex].value;
-        if (name == this.input.name()) return;
-        if (input) input.disconnect(kbd);
+        let selectMidiIn = document.getElementById('selectmidiin');
+        let name = selectMidiIn.options[selectMidiIn.selectedIndex].value;
+        if (name == MIDI.input.name()) return;
+        if (MIDI.input) MIDI.input.disconnect(MIDI.kbd);
         // if (name == 'Virtual_in') {
         //     if (midiInPort) midiInPort.close();
         //     midiInPort = piano;
@@ -121,11 +128,13 @@ class MIDI {
         JZZ().openMidiIn(name).or(MIDI.onMidiInFail).and(MIDI.onMidiInSuccess);
     }
 
-    static changeMidiOut(name) {
-        if (name == this.output.name()) return;
-        if (this.output) this.thru.disconnect(this.output);
+    static changeMidiOut() {
+        var selectMidiOut = document.getElementById('selectmidiout');
+        var name = selectMidiOut.options[selectMidiOut.selectedIndex].value;
+        if (name == MIDI.output.name()) return;
+        if (MIDI.output) MIDI.thru.disconnect(MIDI.output);
         
-        this.output = JZZ().openMidiOut(name).or(MIDI.onMidiOutFail).and(MIDI.onMidiOutSuccess);
+        MIDI.output = JZZ().openMidiOut(name).or(MIDI.onMidiOutFail).and(MIDI.onMidiOutSuccess);
     }
     
     static setListbox(lb, s) {
@@ -138,31 +147,33 @@ class MIDI {
         }
         MIDI.output = this;
         MIDI.thru.connect(this);
-        midiOutName = this.name();
-        selectMidiOut = document.getElementById('selectmidiin');
+        let midiOutName = this.name();
+        let selectMidiOut = document.getElementById('selectmidiout');
         MIDI.setListbox(selectMidiOut, midiOutName);
     }
     
     static onMidiOutFail() {
         if (MIDI.output) MIDI.thru.connect(MIDI.output);
-        midiOutName = this.name();
-        selectMidiOut = document.getElementById('selectmidiin');
+        let midiOutName = this.name();
+        let selectMidiOut = document.getElementById('selectmidiout');
         MIDI.setListbox(selectMidiOut, midiOutName);
     }
     
     static onMidiInSuccess() {
         if (MIDI.input && MIDI.input != MIDI.kbd) {
-            midiInPort.close();
+            MIDI.input.close();
         }
-        midiInPort = this;
+        MIDI.input = this;
         this.connect(MIDI.kbd);
-        midiInName = this.name();
-        selectMidiOut = document.getElementById('selectmidiin');
+        let midiInName = this.name();
+        let selectMidiIn = document.getElementById('selectmidiin');
         MIDI.setListbox(selectMidiIn, midiInName);
     }
     
     static onMidiInFail() {
         if (MIDI.input) MIDI.input.connect(MIDI.kbd);
+        let selectMidiIn = document.getElementById('selectmidiin');
+        let midiInName = this.name();
         MIDI.setListbox(selectMidiIn, midiInName);
     }
   

@@ -14,7 +14,7 @@
 <script src="./js/midi.js"></script>
 <script>
 function print_chord(chord_text, play_yn) {
-    document.getElementById("chord").innerHTML = chord_text;
+    document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
     let type = 3;
     if (chord_text.length > 1) {
         if (chord_text[1] == "#") type = 1;
@@ -29,7 +29,7 @@ function print_chord(chord_text, play_yn) {
     // else var s = cdform + "전위";
     // document.getElementById("chordform").innerHTML = `Top note : ${top_note}, [ ${s} ]`;
 
-    document.getElementById("chordform").innerHTML = `Top note : ${top_note}`;
+    document.getElementById("chordform").innerHTML = `Top note : <b>${top_note}</b>`;
     document.getElementById("chordtone").innerHTML = cdtone_txts.join(", ");
     Piano.clear_piano();
     if (play_yn) {
@@ -135,8 +135,10 @@ function init_setting() {
     }
 
     //초기값설정
+    let chks = document.getElementsByName("chk_chordtone");
+    for (let i in chks) if (i > 4)chks[i].checked = false;
     chks = document.getElementsByName("chk_tension");
-    for (j in chks) chks[j].checked = false;
+    for (let i in chks) chks[i].checked = false;
 
     // 이벤트 리스너 설정
     // next btn
@@ -188,7 +190,7 @@ function get_checked_ids() {
     let ids = [];
     for (let i in Chord.nm_list) {
         ids.push([]);
-        chks = document.getElementsByName("chk_"+ Chord.nm_list[i]);
+        let chks = document.getElementsByName("chk_"+ Chord.nm_list[i]);
         for (let j in chks)
             if (chks[j].checked)
                 ids[i].push(j);
@@ -237,24 +239,9 @@ function change_setting() {
 }
 
 window.onload = function() {
-    // oct = make_scale("C");
-    // nm = Note.num2name(oct);
-    //
-    // dv = document.getElementById("chord");
-    // dv.innerHTML = "C Major Scale : " + nm.toString() + "<br/>";
-    //
-    // chord = "DmM7 [A form]"
-    // ct = Note.num2name(Chord.chordtone(chord));
-    // dv.innerHTML += chord + ct.toString() + "<br/>";
-    
     init_setting();
     change_mode(GlobalVar.MODE);
     MIDI.init();
-
-    // song1 = new SheetMusic(["A#(Bb)", "-", "Cm7.2", "-","Dm7.1" ,"-" , "Gm7", "-"]);
-    // GlobalVar.songs.push(song1);
-
-    //setBPM();
 }
 
 </script>
@@ -276,6 +263,14 @@ window.onload = function() {
     /* left: 25%; */
     /* transform: translateX(-50%); */
 }
+#txts {
+    padding-top: 20vmin;
+    /* position:absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); */
+}
+
 .top_right_btns {
     position:absolute;
     right:0;
@@ -310,9 +305,12 @@ window.onload = function() {
         </div>
         <div id="setting" class="offcanvas-body">
             <div class="input-group mb-3">
-                MIDI In: <select id=selectmidiin></select> &xrArr;
-                MIDI Out: <select id=selectmidiout></select>
+                <span class="input-group-text">MIDI In</span>
+                <select id="selectmidiin" class="form-select"></select>
+                <span class="input-group-text">MIDI Out</span>
+                <select id="selectmidiout" class="form-select"></select>
             </div>
+            <hr />
             <div class="input-group mb-3">
                 <span class="input-group-text" id="basic-addon1">모드</span>
                 
@@ -327,7 +325,6 @@ window.onload = function() {
                 <span class="input-group-text" id="basic-addon3" style="background-color: white;">
                     <input type="range" id="volume" min="0" max="100" style="margin-left:5px;">
                 </span>
-                
             </div>
             <hr />
             <div id="chord_settings">
@@ -339,15 +336,17 @@ window.onload = function() {
             </div>
             
         </div>
-      </div>
-    <div id="chord" style="font-size:xxx-large;text-align:center">
-        &nbsp;
     </div>
-    <div id="chordform" style="font-size:xx-large;text-align:center">
-        &nbsp;
-    </div>
-    <div id="chordtone" style="font-size:large;text-align:center">
-        &nbsp;
+    <div id="txts">
+        <div id="chord" style="font-size:14vmin;text-align:center">
+            &nbsp;
+        </div>
+        <div id="chordform" style="font-size:10vmin;text-align:center">
+            &nbsp;
+        </div>
+        <div id="chordtone" style="font-size:6vmin;text-align:center">
+            &nbsp;
+        </div>
     </div>
     <br/>
     <div id="piano">

@@ -42,9 +42,8 @@ class Note {
 }
 
 class Chord {
-    
     static nm_list = ["note", "chordtone", "tension", "form"];
-    static chordtones = ["", "7", "m7", "M7", "mM7", "7sus4",  "dim7", "m6", "m7(b5)"];
+    static chordtones = ["", "7", "7sus4", "m7", "M7", "mM7", "dim7", "6", "m6", "m7(b5)", "add2"];
     static tensions = ["", "b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
     static forms = ["", "전위"];
 
@@ -73,23 +72,24 @@ class Chord {
             let add_name = this.chordtones[i]
             if (chord_nm.indexOf(add_name) > -1) {
                 if      (add_name == "7"     )  result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "7sus4" )  result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
                 else if (add_name == "m7"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
                 else if (add_name == "M7"    )  result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
                 else if (add_name == "mM7"   )  result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
-                else if (add_name == "7sus4" )  result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
                 else if (add_name == "m6"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
                 else if (add_name == "dim7"  )  result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
                 else if (add_name == "m7(b5)")  result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
+                else if (add_name == "add2")    result = result.concat([(num+2)%12, (num+4)%12, (num+ 7)%12]);
                 break;
             }
         }
-        // 코드 한개짜리 tension 추가
+        // 코드 한개짜리
         if (result.length < 3) {
             if(split_nm.length > 1) {
                 if ((num+4)%12 == result[0]) result.push((num+2)%12, (num+7)%12);
                 else result.push((num+4)%12, (num+7)%12);
             }
-            else result.push((num+2)%12, (num+4)%12, (num+7)%12);
+            else result.push(num, (num+4)%12, (num+7)%12);
         }
 
         // ===== tension 미추가 =====
