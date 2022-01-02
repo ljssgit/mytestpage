@@ -87,9 +87,10 @@ class Chord {
         if (result.length < 3) {
             if(split_nm.length > 1) {
                 if ((num+4)%12 == result[0]) result.push((num+2)%12, (num+7)%12);
+                else if ((num+7)%12 == result[0]) result.push((num+2)%12, (num+4)%12);
                 else result.push((num+4)%12, (num+7)%12);
             }
-            else result.push(num, (num+4)%12, (num+7)%12);
+            else result.push((num+4)%12, (num+7)%12);
         }
 
         // ===== tension 미추가 =====
