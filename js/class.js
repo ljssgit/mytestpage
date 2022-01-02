@@ -141,7 +141,6 @@ class Chord {
             if(num>=0) num = parseInt(Math.random()*(chordtones.length-1));
             else num = 1 + parseInt(Math.random()*(chordtones.length-2));
         }
-        console.log(num);
         for (let i=0;i<num;i++) {
             chordtones.splice(1, 0, chordtones.pop());
             change_cnt++;
