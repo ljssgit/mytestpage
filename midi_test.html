@@ -28,6 +28,8 @@
 <script src="https://cdn.jsdelivr.net/npm/jzz"></script>
 <script src="https://cdn.jsdelivr.net/npm/jzz-input-kbd"></script>
 <script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+<script src="./js/JZZ.synth.MIDIjs.js"></script>
+<script src="./js/MIDI.js"></script>
 </head>
 <body>
     <p onclick="in_midi.note(0, 'A#5', 127, 500);">
@@ -92,11 +94,16 @@ var output = JZZ().openMidiOut();
 // delay.connect(output);
 
 input.connect(kbd);
-kbd.connect(output);
+//kbd.connect(output);
 //kbd.connect(waudio);
-kbd.disconnect(output);
+//kbd.disconnect(output);
 output = JZZ().openMidiOut("Web Audio").or("MIDI Out Fail!").and("MIDI Out Success!");
-kbd.connect(output);
+output = JZZ.synth.MIDIjs({ soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "acoustic_grand_piano" })
+                    .or(function(){ console.log('Cannot load MIDI.js!\n'); MIDICtrl.onMidiOutFail; })
+                    .and(function(){ console.log("MIDIjs Loaded"); kbd.connect(this);});
+JZZ.synth.MIDIjs.register(output);
+//output.register();
+//kbd.connect(output);
 
 </script>
 </html>

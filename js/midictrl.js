@@ -1,19 +1,25 @@
+var a = "a";
 class MIDICtrl {
     static input = undefined;
     static kbd = undefined;
     static thru = undefined;
     static output = undefined;
+    static midijs = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
 
     constructor(){}
 
-    static init() {
-        let default_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
-        let default_out_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
-        let synth_name = "Web Audio";
+    static async init() {
+        const default_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
+        const default_out_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
+        const inst_name = "Acoustic Grand Piano";
+        const midijs = JZZ.synth.MIDIjs({ soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "acoustic_grand_piano" })
+            .or(function(){ console.log('Cannot load MIDI.js!\n' + this.err()); MIDICtrl.onMidiOutFail; })
+            .and(function(){ console.log("MIDIjs Loaded"); });
+        //JZZ.synth.MIDIjs.register(inst_name, { soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "acoustic_grand_piano" })
+        JZZ.addMidiOut(inst_name, midijs);
+
+        const synth_name = "Synth";
         JZZ.synth.Tiny.register(synth_name);
-        let midijs_synth = JZZ.synth.MIDIjs({ soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/"/*"./soundfont/"*/, instrument: "acoustic_grand_piano" })
-            .or(function(){ alert('Cannot load MIDI.js!\n' + this.err()); })
-            .and(function(){  })
 
         JZZ.addMidiIn('None', default_in_midi);
         JZZ.addMidiOut('None', default_out_midi);
@@ -69,7 +75,7 @@ class MIDICtrl {
         kbd.connect(thru);
         thru.connect(default_out_midi)
 
-        JZZ().and(function(){
+        await JZZ().and(function(){
             let i;
             let selectMidiIn = document.getElementById('selectmidiin');
             let selectMidiOut = document.getElementById('selectmidiout');
@@ -78,10 +84,10 @@ class MIDICtrl {
                 let reverse_idx = this.info().outputs.length-i-1;
                 selectMidiOut[i] = new Option(this.info().outputs[reverse_idx].name);
             }
-            selectMidiOut[1].selected = 1;
-            if (!i) {
-                selectMidiOut[i] = new Option('Not available');
-            }
+            selectMidiOut[2].selected = 1;
+            // if (!i) {
+            //     selectMidiOut[i] = new Option('Not available');
+            // }
             for (i = 0; i < this.info().inputs.length; i++) {
                 let reverse_idx = this.info().inputs.length-i-1;
                 selectMidiIn[i] = new Option(this.info().inputs[reverse_idx].name);
@@ -96,10 +102,9 @@ class MIDICtrl {
         }).and(function() {
             MIDICtrl.changeMidiOut();
             MIDICtrl.changeMidiIn();
-        });;
-            
-        // JZZ().openMidiOut().or(MIDICtrl.onMidiOutFail).and(MIDICtrl.onMidiOutSuccess);
-        // JZZ().openMidiIn().or(MIDICtrl.onMidiInFail).and(MIDICtrl.onMidiInSuccess);
+        });
+
+        //JZZ.addMidiOut('MIDIjs', MIDICtrl.midijs);
     }
 
     static playing_notes() {
@@ -110,19 +115,6 @@ class MIDICtrl {
                 playing_notes.push(i);
         return playing_notes;
     }
-
-    // static changeMidiIn(name) {
-    //     var name = selectMidiIn.options[selectMidiIn.selectedIndex].value;
-    //     if (name == midiInName) return;
-    //     if (midiInPort) midiInPort.disconnect(through);
-    //     if (name == 'HTML Piano') {
-    //     if (midiInPort) midiInPort.close();
-    //     midiInPort = piano;
-    //     midiInPort.connect(through);
-    //     midiInName = name;
-    //     }
-    //     else JZZ().openMidiIn(name).or(onMidiInFail).and(onMidiInSuccess);
-    // }
     
     static changeMidiIn() {
         let selectMidiIn = document.getElementById('selectmidiin');
@@ -139,16 +131,18 @@ class MIDICtrl {
     }
 
     static changeMidiOut() {
-        var selectMidiOut = document.getElementById('selectmidiout');
-        var name = selectMidiOut.options[selectMidiOut.selectedIndex].value;
+        let selectMidiOut = document.getElementById('selectmidiout');
+        let name = selectMidiOut.options[selectMidiOut.selectedIndex].value;
         if (name == MIDICtrl.output.name()) return;
         if (MIDICtrl.output) MIDICtrl.thru.disconnect(MIDICtrl.output);
         
-        MIDICtrl.output = JZZ().openMidiOut(name).or(MIDICtrl.onMidiOutFail).and(MIDICtrl.onMidiOutSuccess);
+        MIDICtrl.output = JZZ().openMidiOut(name)
+            .and(MIDICtrl.onMidiOutSuccess)
+            .or(MIDICtrl.onMidiOutFail);
     }
     
     static setListbox(lb, s) {
-        for (var i = 0; i < lb.options.length; i++) if (lb.options[i].value == s) lb.options[i].selected = 1;
+        for (let i = 0; i < lb.options.length; i++) if (lb.options[i].value == s) lb.options[i].selected = 1;
     }
 
     static onMidiOutSuccess() {
