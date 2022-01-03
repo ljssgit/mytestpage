@@ -9,9 +9,11 @@
 <script src="https://cdn.jsdelivr.net/npm/jzz"></script>
 <script src="https://cdn.jsdelivr.net/npm/jzz-input-kbd"></script>
 <script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+<script src="./js/JZZ.synth.MIDIjs.js"></script>
+<script src="./js/MIDI.js"></script>
 <script src="./settings.js"></script>
 <script src="./js/class.js"></script>
-<script src="./js/midi.js"></script>
+<script src="./js/midictrl.js"></script>
 <script>
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -86,9 +88,9 @@ function auto_print_chord() {
 function is_correct() {
     let correct = false;
     let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
-    for (i in ct) ct[i] = JZZ.MIDI.noteValue(ct[i]+"5")%12;
+    for (i in ct) ct[i] = JZZ.MIDICtrl.noteValue(ct[i]+"5")%12;
 
-    let playing_notes = MIDI.playing_notes();
+    let playing_notes = MIDICtrl.playing_notes();
 
     if (Math.max.apply(null, playing_notes)%12 == ct[ct.length-1]
     &&  Math.min.apply(null, playing_notes)%12 == ct[0]) {
@@ -251,9 +253,9 @@ function change_setting() {
     GlobalVar.VOLUME=document.getElementById('volume').value;
     GlobalVar.BPM = document.getElementById("bpm").value;
 
-    msgs = JZZ.MIDI.volumeF(0, GlobalVar.VOLUME/100);
-    MIDI.output.send(msgs[0]);
-    MIDI.output.send(msgs[1]);
+    msgs = JZZ.MIDICtrl.volumeF(0, GlobalVar.VOLUME/100);
+    MIDICtrl.output.send(msgs[0]);
+    MIDICtrl.output.send(msgs[1]);
 
     change_mode(GlobalVar.MODE);
 }
@@ -261,7 +263,7 @@ function change_setting() {
 window.onload = function() {
     init_setting();
     change_mode(GlobalVar.MODE);
-    MIDI.init();
+    MIDICtrl.init();
 }
 
 </script>
@@ -298,6 +300,7 @@ window.onload = function() {
 </style>
 </head>
 <body>
+    <div style="position:absolute;left:0;">Version : 1</div>>
     <div class="top_right_btns">
         <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearTimeout(GlobalVar.chord_timerid);"
             data-bs-toggle="offcanvas" data-bs-target="#offcanvasTop" aria-controls="offcanvasTop">
@@ -325,9 +328,9 @@ window.onload = function() {
         </div>
         <div id="setting" class="offcanvas-body">
             <div class="input-group mb-3">
-                <span class="input-group-text">MIDI In</span>
+                <span class="input-group-text">MIDICtrl In</span>
                 <select id="selectmidiin" class="form-select"></select>
-                <span class="input-group-text">MIDI Out</span>
+                <span class="input-group-text">MIDICtrl Out</span>
                 <select id="selectmidiout" class="form-select"></select>
             </div>
             <hr />
@@ -351,7 +354,7 @@ window.onload = function() {
             </div>
             <hr />
             <div class="input-group mb-3">
-                <label class="input-group-text" for="inputGroupFile01">MIDI FILE</label>
+                <label class="input-group-text" for="inputGroupFile01">MIDICtrl FILE</label>
                 <input type='file' class="form-control" id="file"/>
             </div>
             
