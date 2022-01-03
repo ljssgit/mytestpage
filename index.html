@@ -88,7 +88,7 @@ function auto_print_chord() {
 function is_correct() {
     let correct = false;
     let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
-    for (i in ct) ct[i] = JZZ.MIDICtrl.noteValue(ct[i]+"5")%12;
+    for (i in ct) ct[i] = JZZ.MIDI.noteValue(ct[i]+"5")%12;
 
     let playing_notes = MIDICtrl.playing_notes();
 
@@ -253,7 +253,7 @@ function change_setting() {
     GlobalVar.VOLUME=document.getElementById('volume').value;
     GlobalVar.BPM = document.getElementById("bpm").value;
 
-    msgs = JZZ.MIDICtrl.volumeF(0, GlobalVar.VOLUME/100);
+    msgs = JZZ.MIDI.volumeF(0, GlobalVar.VOLUME/100);
     MIDICtrl.output.send(msgs[0]);
     MIDICtrl.output.send(msgs[1]);
 
@@ -300,7 +300,7 @@ window.onload = function() {
 </style>
 </head>
 <body>
-    <div style="position:absolute;left:0;">Version : 2</div>>
+    <div style="position:absolute;left:0;">Version : 3</div>>
     <div class="top_right_btns">
         <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearTimeout(GlobalVar.chord_timerid);"
             data-bs-toggle="offcanvas" data-bs-target="#offcanvasTop" aria-controls="offcanvasTop">
