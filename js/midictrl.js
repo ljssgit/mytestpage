@@ -11,7 +11,7 @@ class MIDICtrl {
         let default_out_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
         let synth_name = "Web Audio";
         JZZ.synth.Tiny.register(synth_name);
-        let midijs_synth = JZZ.synth.MIDIjs({ soundfontUrl: "./soundfont/", instrument: "acoustic_grand_piano" })
+        let midijs_synth = JZZ.synth.MIDIjs({ soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/Tabla/"/*"./soundfont/"*/, instrument: "acoustic_grand_piano" })
             .or(function(){ alert('Cannot load MIDI.js!\n' + this.err()); })
             .and(function(){  })
 
