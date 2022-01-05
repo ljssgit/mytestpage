@@ -29,12 +29,12 @@ class MIDICtrl {
         let ratio = 0.7
         for (let i in sizes) sizes[i] = sizes[i]*ratio;
 
-        let kbd = JZZ.input.Kbd({at:'piano', from:'C3', to:'B5',
+        let kbd = JZZ.input.Kbd({at:'piano', from:'C3', to:'B4',
             wl:sizes[0], ww:sizes[1], bl:sizes[2], bw:sizes[3],
             0:   { pos: 'W' },
             320: { },
-            // 450: { to: 'E5' },
-            // 610: { to: 'B5' },
+            450: { to: 'E5' },
+            610: { to: 'B5' },
             650: { to: 'E6' },
             900: { to: 'B6' },
             //1200: { from: 'C2' , to:'B6'},
