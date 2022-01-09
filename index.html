@@ -265,10 +265,12 @@ function change_setting() {
 }
 
 window.onload = () => {
-    //screen.orientation.lock('landscape');
+    // 화면회전 이벤트
+    document.addEventListener("orientationchange", function(event){
+        MIDICtrl.init();
+    });
     v = document.getElementById('version')
     v.innerHTML = "VERSION : "+VERSION;
-    screen.orientation.lock('landscape').then(success=>v.innerHTML += " success",failure => v.innerHTML += " fail");
     init_setting();
     change_mode(GlobalVar.MODE);
     MIDICtrl.init();

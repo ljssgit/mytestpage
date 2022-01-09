@@ -1,6 +1,6 @@
 {
-    "short_name": "Chord",
-    "name": "Chord Application",
-    "display":      "fullscreen",
+    "short_name": "Chord Matching",
+    "name": "Chord Matching Application",
+    "display":      "standalone",
     "orientation":  "landscape"
 }
