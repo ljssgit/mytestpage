@@ -66,12 +66,14 @@ class Chord {
             num = Note.name2num(chord_nm.substr(0,2));
         else num = Note.name2num(chord_nm[0]);
         result.push(num);
+        //result.push(num); //오른손 근음 포함
 
         // 코드톤 추가
         for (let i=this.chordtones.length-1;i>=0;i--) {
             let add_name = this.chordtones[i]
             if (chord_nm.indexOf(add_name) > -1) {
-                if      (add_name == "7"     )  result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
+                if (add_name == "add2")    result = result.concat([(num+2)%12, (num+4)%12, (num+ 7)%12]);
+                else if (add_name == "7"     )  result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
                 else if (add_name == "7sus4" )  result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
                 else if (add_name == "m7"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
                 else if (add_name == "M7"    )  result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
@@ -79,7 +81,6 @@ class Chord {
                 else if (add_name == "m6"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
                 else if (add_name == "dim7"  )  result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
                 else if (add_name == "m7(b5)")  result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
-                else if (add_name == "add2")    result = result.concat([(num+2)%12, (num+4)%12, (num+ 7)%12]);
                 break;
             }
         }
@@ -88,9 +89,9 @@ class Chord {
             if(split_nm.length > 1) {
                 if ((num+4)%12 == result[0]) result.push(num, (num+2)%12, (num+7)%12);
                 else if ((num+7)%12 == result[0]) result.push(num, (num+2)%12, (num+4)%12);
-                else result.push(num, (num+4)%12, (num+7)%12);
+                else result.push((num+4)%12, (num+7)%12);
             }
-            else result.push(num, (num+4)%12, (num+7)%12);
+            else result.push((num+4)%12, (num+7)%12);
         }
 
         // ===== tension 미추가 =====
@@ -147,24 +148,6 @@ class Chord {
         }
 
         return (chordtones.length-1-change_cnt) % (chordtones.length-1);
-    }
-}
-
-class Scale {
-    static major_scale = [2, 2, 1, 2, 2, 2, 1];
-    
-    static make_scale(note) {
-        octave = [];
-        note = Note.name2num(note);
-
-        octave.push(note);
-        for (let i in GlobalVar.major_scale) {
-            num = (octave[octave.length-1]+GlobalVar.major_scale[i])%12;
-            octave.push(num);
-        }
-        octave.pop();
-
-        return octave;
     }
 }
 
