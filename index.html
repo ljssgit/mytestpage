@@ -260,7 +260,8 @@ function change_setting() {
     change_mode(GlobalVar.MODE);
 }
 
-window.onload = function() {
+window.onload = () => {
+    //screen.orientation.lock('landscape');
     init_setting();
     change_mode(GlobalVar.MODE);
     MIDICtrl.init();
@@ -268,6 +269,17 @@ window.onload = function() {
 
 </script>
 <style>
+@media( orientation: portrait ){
+    html {
+    transform: rotate(-90deg);
+    transform-origin: top left;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100vh;
+    height: 100vw;
+    }
+}
 #piano {
     /* display:grid;
     place-content:center; */
@@ -300,7 +312,7 @@ window.onload = function() {
 </style>
 </head>
 <body>
-    <div style="position:absolute;left:0;"> Version : 1 </div>
+    <div style="position:absolute;left:0;"> Version : 2 </div>
     <div class="top_right_btns">
         <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearTimeout(GlobalVar.chord_timerid);"
             data-bs-toggle="offcanvas" data-bs-target="#offcanvasTop" aria-controls="offcanvasTop">
