@@ -1,4 +1,6 @@
 {
+    "short_name": "Chord",
+    "name": "Chord Application",
     "display":      "fullscreen",
     "orientation":  "landscape"
 }
