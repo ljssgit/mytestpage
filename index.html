@@ -266,9 +266,9 @@ function change_setting() {
 
 window.onload = () => {
     // 화면회전 이벤트
-    document.addEventListener("orientationchange", function(event){
-        MIDICtrl.init();
-    });
+    // document.addEventListener("orientationchange", function(event){
+    //     MIDICtrl.init();
+    // });
     v = document.getElementById('version')
     v.innerHTML = "VERSION : "+VERSION;
     init_setting();
@@ -278,32 +278,19 @@ window.onload = () => {
 
 </script>
 <style>
-    /*
-@media( orientation: portrait ){
-    html {
-    transform: rotate(-90deg);
-    transform-origin: top left;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100vh;
-    height: 100vw;
-    }
-}
-*/
 #piano {
     /* display:grid;
     place-content:center; */
 
     /* display:flex;
     justify-content: center;
-    align-items: center;
-    */
+    align-items: center; */
+   
     position:absolute;
-    /* margin:0 auto; */
     left: 50%;
     bottom: 0;
     transform: translateX(-50%);
+    
     
     /* left: 25%; */
     /* transform: translateX(-50%); */

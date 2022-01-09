@@ -1,4 +1,3 @@
-var a = "a";
 class MIDICtrl {
     static input = undefined;
     static kbd = undefined;
@@ -24,29 +23,61 @@ class MIDICtrl {
         JZZ.addMidiIn('None', default_in_midi);
         JZZ.addMidiOut('None', default_out_midi);
 
-        //sizes = [150, 42, 100, 24]
-        let sizes = [152, 38, 100, 24]
-        let ratio = 0.7
-        for (let i in sizes) sizes[i] = sizes[i]*ratio;
+        function getKeySizes() {
+            //let sizes = [152, 38, 100, 24];
+            let sizes = [152, 38, 100, 22];
+            let ratio = window.innerWidth / ((sizes[1]) * 52);
+            for (let i in sizes) sizes[i] = sizes[i]*ratio+2;
 
-        let kbd = JZZ.input.Kbd({at:'piano', from:'C3', to:'B4',
-            wl:sizes[0], ww:sizes[1], bl:sizes[2], bw:sizes[3],
+            return sizes;
+        }
+
+        let key_sizes = getKeySizes();
+        let kbd = await JZZ.input.Kbd({at:'piano', from:'A1', to:'C9',//from:'A0', to:'C8',
+            wl:key_sizes[0], ww:key_sizes[1], bl:key_sizes[2], bw:key_sizes[3],
             0:   { pos: 'W' },
             320: { },
-            450: { to: 'E5' },
-            610: { to: 'B5' },
-            650: { to: 'E6' },
-            900: { to: 'B6' },
-            //1200: { from: 'C2' , to:'B6'},
-            //1200: { to: 'B6' },
-            //1500: { from: 'C2' ,to: 'B7' },
-            // onCreate: function() {
-            //     this.getKeys().setStyle({ margin:0, borderColor:'#00f' });
-            //     this.getBlackKeys().setStyle({ backgroundColor:'#c0c' }, {});
-            //     this.getWhiteKeys().setStyle({ backgroundColor:'#fef' }, {});
-            // },
+            onCreate: function() {
+                // resize 이벤트 등록
+                this.onResize = function() {
+                    let key_sizes = getKeySizes();
+
+                    this.current.wl = key_sizes[0];
+                    this.current.ww = key_sizes[1];
+                    this.current.bl = key_sizes[2];
+                    this.current.bw = key_sizes[3];
+                    this.createAt(this.current.at);
+                    
+                    let cnt = 0;
+                    let i = 0;
+                    let keys = this.getKeys().keys;
+                    let key_objs = this.keys;
+                    let black_keys = this.getBlackKeys().keys;
+                    for (let idx in keys) {
+                        i = keys[idx];
+                        let isBlackKey = (black_keys.indexOf(i) >= 0);
+
+                        let left = parseInt(this.locs[i].left.split("px")[0].trim());
+                        //console.log(left);
+                        left = (left > 3 ? left-(3*cnt) : 0);
+                        if (isBlackKey) left++;
+                        left += "px";
+                        this.locs[i].left = left;
+                        key_objs[i].style["left"] = left;
+
+                        if (!isBlackKey) cnt++;
+                    }
+                    let piano_width = parseInt(this.locs[i].left.split("px")[0].trim())+key_sizes[1];
+                    document.getElementById("piano").firstChild.style.width = piano_width+"px";
+
+                    console.log("change");
+                }
+            },
             })
             .or(function(){ alert('Cannot open KeyBoard!\n' + this.err()); })
+            .and(function(){ this.getKeys().piano.resize() })
+        //console.log(kbd.getKeys());
+
 
         let thru = JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
