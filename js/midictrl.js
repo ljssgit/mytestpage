@@ -78,9 +78,9 @@ class MIDICtrl {
             .and(function(){ this.getKeys().piano.resize() })
         //console.log(kbd.getKeys());
 
-
         let thru = JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
+            MIDICtrl.render(MIDICtrl.playing_notes());
             if (is_correct() && GlobalVar.chord_timerid == null) {
                 clearInterval(GlobalVar.timerid);
                 clearInterval(GlobalVar.chord_timerid);
@@ -143,7 +143,7 @@ class MIDICtrl {
     static playing_notes() {
         let notes = MIDICtrl.kbd.getKeys()["piano"].playing;
         let playing_notes = [];
-        for (i in notes)
+        for (let i in notes)
             if (typeof notes[i] != "undefined")
                 playing_notes.push(i);
         return playing_notes;
@@ -213,5 +213,40 @@ class MIDICtrl {
         let midiInName = this.name();
         MIDICtrl.setListbox(selectMidiIn, midiInName);
     }
-  
+
+    static render(arr) {
+        let abcstring = "X:1\nK:C\n%%staves {(PianoRightHand) (PianoLeftHand)}\nV:PianoRightHand clef=treble\nV:PianoLeftHand clef=bass\n";
+        let notes = arr;
+        let rh = "";
+        let lh = "";
+        notes.forEach((element) => {
+            let key = MIDI.noteToKey[element];
+            if (key.includes("b") && document.getElementById("chordtone").innerText.includes("#")) {
+                key = MIDI.noteToKey[element-1];
+                key = key[0] + "#" + key[1];
+            }
+            let oct = parseInt(key[key.length-1]);
+            let k = key.substr(0,key.length-1);
+            if (k[k.length-1] == "#") k = "^" + k[0];
+            else if (k[k.length-1] == "b") k = "_" + k[0];
+
+            if (element < MIDI.keyToNote["F3"]) {
+                lh += k + ",".repeat(4-oct) + " ";
+            }
+            else {
+                if (oct==3) var oct_add_char = ",";
+                else var oct_add_char = "'".repeat(oct-4);
+
+                rh += k + oct_add_char + " ";
+            }
+        });
+        let rhs = "[V: PianoRightHand] |";
+        let lhs = "[V: PianoLeftHand] |";
+        if (rh == "") rhs += "z8|\n"
+        else rhs += "[" + rh + "]8|\n";
+        if (lh == "") lhs += "z8|\n"
+        else lhs += "[" + lh + "]8|\n";
+
+        ABCJS.renderAbc("paper", abcstring+rhs+lhs, {staffwidth: 160, scale:1.5, responsive: "resize"});
+    }
 }
