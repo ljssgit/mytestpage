@@ -145,6 +145,7 @@ class Chord {
         console.log(num);
         let change_cnt = 0;
         for (let i=0;i<num;i++) {
+            //chordtones.splice(1, 0, chordtones.pop());
             chordtones.splice(1, 0, chordtones.pop());
             change_cnt++;
         }

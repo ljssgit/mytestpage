@@ -17,7 +17,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 1;
+VERSION = 2;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -97,7 +97,7 @@ function is_correct() {
     let playing_notes = MIDICtrl.playing_notes();
 
     if (Math.max.apply(null, playing_notes)%12 == ct[ct.length-1]
-    &&  Math.min.apply(null, playing_notes)%12 == ct[0]) {
+    ) {//&&  Math.min.apply(null, playing_notes)%12 == ct[0]) {
         for (i in playing_notes) playing_notes[i] = playing_notes[i]%12;
 
         //playing_notes = ct;
