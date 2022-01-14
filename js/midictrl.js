@@ -83,11 +83,13 @@ class MIDICtrl {
             this.emit(msg);
             if (is_correct() && GlobalVar.chord_timerid == null) {
                 clearInterval(GlobalVar.timerid);
+                clearInterval(GlobalVar.chord_timerid);
                 document.getElementById("chord").style.color = "blue";
                 document.getElementById("time").style.color = "blue";
                 GlobalVar.chord_timerid = setTimeout(
                     function(){
-                        print_chord(PlayingChordList.next());
+                        //print_chord(PlayingChordList.next());
+                        auto_print_chord();
                         GlobalVar.chord_timerid = null;
                         document.getElementById("chord").style.color = "";
                         document.getElementById("time").style.color = "";

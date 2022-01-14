@@ -43,8 +43,8 @@ function print_chord(chord_text, play_yn) {
     document.getElementById("chordtone").innerHTML = cdtone_txts.join(", ");
     //Piano.clear_piano();
     
-    MIDICtrl.input.send(JZZ.MIDI.allNotesOff(0));
-    // 피아노 자동재생
+    if(MIDICtrl.input) MIDICtrl.input.send(JZZ.MIDI.allNotesOff(0));
+    // 피아노 재생
     if (play_yn) {
         //Piano.mark_piano(cdtone);
         let oct = 4;
@@ -60,17 +60,21 @@ function print_chord(chord_text, play_yn) {
     
     // 시간 counting
     clearInterval(GlobalVar.timerid);
-    if (GlobalVar.MODE == 1) {
-        let start_time = Date.now();
-        GlobalVar.timerid = setInterval(
-            function(stime){
-                elapse = Date.now() - stime;
-                document.getElementById("time").innerText = (elapse / 1000).toFixed(1);
-            },
-            100,
-            start_time,
-        )
-    }
+
+    let start_time = Date.now();
+    if (GlobalVar.BPM > 0) start_time += 1000*60/GlobalVar.BPM;
+    GlobalVar.timerid = setInterval(
+        function(stime){
+            elapse = Date.now() - stime;
+            document.getElementById("time").innerText = (Math.abs(elapse) / 1000).toFixed(1);
+            if (elapse < 0 && elapse > -100) {
+                document.getElementById("time").innerText = "0.0";
+                clearInterval(GlobalVar.timerid);
+            }
+        },
+        50,
+        start_time
+    )
 }
 
 function auto_print_chord() {
@@ -79,7 +83,7 @@ function auto_print_chord() {
     GlobalVar.chord_timerid = setTimeout(
         function timer() {
             GlobalVar.chord_timerid = null;
-            GlobalVar.timerid = null;
+            //GlobalVar.timerid = null;
             // if (idx < chord_arr.length) {
             //     print_chord(chord_arr[idx], true);
             //     setTimeout(timer, 1000*60/GlobalVar.BPM, idx+1);
@@ -264,7 +268,8 @@ function change_mode(mode) {
     else if (mode == 1) {
         //document.getElementById("chordtone").style.display = "none";
         console.log("맞추기 모드 전환");
-        print_chord(PlayingChordList.next());
+        auto_print_chord();
+        //print_chord(PlayingChordList.next());
     }
 }
 
