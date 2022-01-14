@@ -43,7 +43,7 @@ class Note {
 
 class Chord {
     static nm_list = ["note", "chordtone", "tension", "form"];
-    static chordtones = ["", "7", "7sus4", "m7", "M7", "mM7", "dim7", "6", "m6", "m7(b5)", "add2"];
+    static chordtones = ["", "add2", "7", "m7", "M7", "7sus4", "mM7", "dim7", "6", "m6", "m7(b5)"];
     static tensions = ["", "b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
     static forms = ["", "전위"];
 
@@ -72,15 +72,16 @@ class Chord {
         for (let i=this.chordtones.length-1;i>=0;i--) {
             let add_name = this.chordtones[i]
             if (chord_nm.indexOf(add_name) > -1) {
-                if (add_name == "add2")    result = result.concat([(num+2)%12, (num+4)%12, (num+ 7)%12]);
-                else if (add_name == "7"     )  result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
-                else if (add_name == "7sus4" )  result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
-                else if (add_name == "m7"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
-                else if (add_name == "M7"    )  result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
-                else if (add_name == "mM7"   )  result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
-                else if (add_name == "m6"    )  result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
-                else if (add_name == "dim7"  )  result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
-                else if (add_name == "m7(b5)")  result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
+                if      (add_name == "add2"     )   result = result.concat([(num+2)%12, (num+4)%12, (num+ 7)%12]);
+                else if (add_name == "7"        )   result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "m7"       )   result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "M7"       )   result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
+                else if (add_name == "7sus4"    )   result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "mM7"      )   result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
+                else if (add_name == "6"        )   result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
+                else if (add_name == "m6"       )   result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
+                else if (add_name == "dim7"     )   result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
+                else if (add_name == "m7(b5)"   )   result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
                 break;
             }
         }
@@ -137,11 +138,12 @@ class Chord {
     }
 
     static change_form(chordtones, is_random=false, num=0) {
-        let change_cnt = 0;
         if (is_random) {
             if(num>=0) num = parseInt(Math.random()*(chordtones.length-1));
             else num = 1 + parseInt(Math.random()*(chordtones.length-2));
         }
+        console.log(num);
+        let change_cnt = 0;
         for (let i=0;i<num;i++) {
             chordtones.splice(1, 0, chordtones.pop());
             change_cnt++;
