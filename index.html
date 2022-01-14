@@ -28,9 +28,10 @@ function print_chord(chord_text, play_yn) {
     }
     let cdtone = Chord.chordtone(chord_text);
     let num = 0;
-    if (!document.getElementById("chk_form_0").checked) num=-1;
+    if (!document.getElementById("chk_form_0").checked) num=-2;
+    else if(document.getElementById("chk_form_1").checked) num=-1;
 
-    let cdform = Chord.change_form(cdtone, is_random=document.getElementById("chk_form_1").checked, num=num);
+    let cdform = Chord.change_form(cdtone, num=num);
     let cdtone_txts = Note.nums2names(cdtone, type=type);
     let top_note = cdtone_txts[cdtone_txts.length-1];
 

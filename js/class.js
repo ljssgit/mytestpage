@@ -137,114 +137,15 @@ class Chord {
         return rand_chords;
     }
 
-    static change_form(chordtones, is_random=false, num=0) {
-        if (is_random) {
-            if(num>=0) num = parseInt(Math.random()*(chordtones.length-1));
-            else num = 1 + parseInt(Math.random()*(chordtones.length-2));
-        }
-        console.log(num);
-        let change_cnt = 0;
-        for (let i=0;i<num;i++) {
-            //chordtones.splice(1, 0, chordtones.pop());
-            chordtones.splice(1, 0, chordtones.pop());
-            change_cnt++;
-        }
+    // num -1:random, -2:random(no default form), >0:form change num
+    static change_form(chordtones, num=-1) {
+        if (num<0) num = (1 + parseInt(Math.random()*(chordtones.length-num-1))) % chordtones.length;
+        
+        chordtones.reverse();
+        for (let i=0;i<num;i++) chordtones.splice(0, 0, chordtones.pop());
+        chordtones.reverse();
 
-        return (chordtones.length-1-change_cnt) % (chordtones.length-1);
-    }
-}
-
-class Piano {
-    static piano_object = null;
-    static keys = [];
-    static sounds = [];
-    static selected_keys = [];
-    static key_size = [135, 21, 85, 11];
-    static piano_octave = [2, 3, 4];
-
-    static get_keys(piano_obj) {
-        for (let i in this.piano_octave) {
-            for (let j in Note.names) {
-                let key = document.createElement("div");
-                let id = Note.names[j]+this.piano_octave[i]
-                key.setAttribute("id", id);
-                if(Note.names[j].length == 1) {
-                    key.setAttribute("class", "white_key");
-                    piano_obj.appendChild(key);
-                }
-                else {
-                    key.setAttribute("class", "black_key");
-                    piano_obj.lastChild.appendChild(key);
-                }
-                this.keys.push(id);
-            }
-            this.piano_object = piano_obj;
-        }
-    }
-
-    //건반 크기 조정
-    static set_piano_size(ratio) {
-        //key_size = [135, 21, 85, 10];
-
-        changecss(".white_key", "height",(this.key_size[0]*ratio)+"px");
-        changecss(".white_key", "width",(this.key_size[1]*ratio)+"px");
-        changecss(".black_key", "height",(this.key_size[2]*ratio)+"px");
-        changecss(".black_key", "width",(this.key_size[3]*ratio)+"px");
-        changecss(".black_key", "left",((this.key_size[1]-this.key_size[3]*0.5)*ratio+1)+"px");
-    }
-
-    static clear_piano() {
-        for (let i in this.selected_keys) {
-            let element = document.getElementById(this.selected_keys[i]);
-            element.className = element.className.replace(/ selected_root_key| selected_key/, "");
-            element.style.backgroundColor = "";
-            this.play_sound(this.selected_keys[i], false);
-        }
-
-        this.selected_keys = [];
-    }
-
-    static mark_piano(chordtone) {
-        this.clear_piano();
-        let ct = [];
-        let oct = this.piano_octave[0];
-        ct.push(Note.names[chordtone[0]]+oct);
-        oct = 4; //oct++;
-        for (let i=1;i<chordtone.length;i++) {
-            if (chordtone[i-1] > chordtone[i]) oct++;
-            if (oct > this.piano_octave[this.piano_octave.length-1]) {
-                oct--;
-                for (j=1;j<i;j++)
-                    ct[j] = ct[j].substr(0,ct[j].length-1)+(parseInt(ct[j][ct[j].length-1])-1);
-            }
-            ct.push(Note.names[chordtone[i]]+oct);
-        }
-        //console.log(ct.toString());
-        this.key_select(ct[0], true);
-        for (let i=1;i<ct.length;i++)
-            this.key_select(ct[i], false);
-    }
-    
-    static key_select(key_id, is_root) {
-        if (key_id == "piano") return;
-        //console.log(key_id + " select");
-        let key_element = document.getElementById(key_id);
-        let selected_idx = this.selected_keys.indexOf(key_id);
-        if (selected_idx >= 0) {
-            key_element.className = key_element.className.replace(/ selected_root_key| selected_key/, "");
-            this.selected_keys.splice(selected_idx, 1);
-
-            this.play_sound(key_id, false);
-        }
-        else {
-            let class_name;
-            if (is_root) class_name = " selected_root_key";
-            else class_name = " selected_key";
-            key_element.className += class_name;
-            this.selected_keys.push(key_id);
-
-            this.play_sound(key_id, true);
-        }
+        return num;
     }
 }
 
