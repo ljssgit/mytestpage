@@ -17,7 +17,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 2;
+VERSION = 3;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -30,8 +30,8 @@ function print_chord(chord_text, play_yn) {
     let num = 0;
     if (!document.getElementById("chk_form_0").checked) num=-2;
     else if(document.getElementById("chk_form_1").checked) num=-1;
-
     let cdform = Chord.change_form(cdtone, num=num);
+
     let cdtone_txts = Note.nums2names(cdtone, type=type);
     let top_note = cdtone_txts[cdtone_txts.length-1];
 
@@ -43,10 +43,22 @@ function print_chord(chord_text, play_yn) {
     document.getElementById("chordtone").innerHTML = cdtone_txts.join(", ");
     //Piano.clear_piano();
     
+    MIDICtrl.input.send(JZZ.MIDI.allNotesOff(0));
+    // 피아노 자동재생
     if (play_yn) {
         //Piano.mark_piano(cdtone);
+        let oct = 4;
+        for (let i in cdtone_txts) {
+            // let time = 10000;
+            // if (GlobalVar.BPM > 0) time = 1000*60/GlobalVar.BPM;
+            if ((i==0 && cdtone[i] < Note.name2num("F")) || (i>0 && cdtone[i]<cdtone[i-1])) oct++;
+
+            MIDICtrl.input.noteOn(0, cdtone_txts[i]+oct, parseInt(127*(GlobalVar.VOLUME/100)));
+            //JZZ().openMidiIn(MIDICtrl.input.name()).note(0, cdtone_txts[i]+"5", parseInt(127*(GlobalVar.VOLUME/100)), time);
+        }
     }
     
+    // 시간 counting
     clearInterval(GlobalVar.timerid);
     if (GlobalVar.MODE == 1) {
         let start_time = Date.now();
@@ -91,6 +103,8 @@ function auto_print_chord() {
 }
 
 function is_correct() {
+    if (GlobalVar.MODE != 1) return false;
+
     let correct = false;
     let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
     for (i in ct) ct[i] = JZZ.MIDI.noteValue(ct[i]+"5")%12;
