@@ -304,9 +304,11 @@ window.onload = () => {
 <style>
 #paperwrap {
     position:absolute;
-    top: 50%;
+    top: 45%;
     transform: translateY(-50%);
-    width: 30vw;
+    width: 20vw;
+    left:10vw;
+    /* border: 1px solid black; */
     /* height: 10vmin; */
 }
 #paper {
@@ -346,7 +348,10 @@ window.onload = () => {
 </style>
 </head>
 <body>
-    <div style="position:absolute;left:0;" id="version"></div>
+    <div id="paperwrap">
+        <div id="paper"></div>
+    </div>
+    <div style="position:absolute;left:0;top:0;" id="version"></div>
     <div class="top_right_btns">
         <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearTimeout(GlobalVar.chord_timerid);"
             data-bs-toggle="offcanvas" data-bs-target="#offcanvasTop" aria-controls="offcanvasTop">
@@ -407,9 +412,6 @@ window.onload = () => {
         </div>
     </div>
     <div id="txts">
-        <div id="paperwrap">
-            <div id="paper"></div>
-        </div>
         <div id="chord" style="margin-left:35vw;font-size:14vmin;text-align:left">
             &nbsp;
         </div>
