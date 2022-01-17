@@ -4,8 +4,7 @@ class MIDICtrl {
     static thru = undefined;
     static output = undefined;
     static midijs = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
-    static sheet_pos = 0;
-    static note_pos = 0;
+    static paper_height = 0;
 
     constructor(){}
 
@@ -140,13 +139,10 @@ class MIDICtrl {
         });
 
         //JZZ.addMidiOut('MIDIjs', MIDICtrl.midijs);
-        MIDICtrl.sheet_pos = document.getElementById("paper").firstChild.childNodes[3].getBoundingClientRect().top;
-        console.log("note 위치 변경!");
-        document.getElementById("paper").firstChild.childNodes.forEach((element)=>{
-            if (element.getAttribute("data-name") == "rest") {
-                //MIDICtrl.note_pos = element.
-            }
-        });
+        // let pb = document.getElementById("paper").style.paddingBottom;
+        // MIDICtrl.paper_height = parseFloat(pb.substring(0, pb.length-1));
+        // console.log(pb);
+        MIDICtrl.paper_height = document.getElementById("paper").firstChild.childNodes[3].getBoundingClientRect().top
     }
 
     static playing_notes() {
@@ -249,8 +245,8 @@ class MIDICtrl {
                 rh += k + oct_add_char + " ";
             }
         });
-        let rhs = "[V: PianoRightHand] ";
-        let lhs = "[V: PianoLeftHand] ";
+        let rhs = "[V: PianoRightHand] |";
+        let lhs = "[V: PianoLeftHand] |";
         if (rh == "") rhs += "z8|\n"
         else rhs += "[" + rh + "]8|\n";
         if (lh == "") lhs += "z8|\n"
@@ -259,17 +255,35 @@ class MIDICtrl {
         document.getElementById("paper").style.marginBottom = 0;
         document.getElementById("paper").style.marginTop = 0;
 
-        ABCJS.renderAbc("paper", abcstring+rhs+lhs, {staffwidth: 100, scale:1.4, responsive: "resize"});
+        ABCJS.renderAbc("paper", abcstring+rhs+lhs, {staffwidth: 160, scale:1.5, responsive: "resize"});
         //위치 보정
-        let st = document.getElementById("paper").firstChild.childNodes[3].getBoundingClientRect().top;
-        if (MIDICtrl.sheet_pos > 0 && st != MIDICtrl.sheet_pos) {
-            let diff = st-MIDICtrl.sheet_pos;
-            
-            if (diff > 0) document.getElementById("paper").style.marginBottom = diff*2+"px";    //중앙정렬때문에 *2
-            else document.getElementById("paper").style.marginTop = Math.abs(diff)*2+"px";
+        let pb = document.getElementById("paper").style.paddingBottom;
+        pb = parseFloat(pb.substring(0, pb.length-1));
+        if (MIDICtrl.paper_height > 0 && pb > MIDICtrl.paper_height) {
+            // let up_pos = 0;
+            // let down_pos = 0;
+            // notes.forEach((element) => {
+            //     console.log(element);
+            //     if (element > 77)
+            //         for(let i=78; i<=element; i++)
+            //             if (!MIDI.noteToKey[i].includes("b"))
+            //                 up_pos++;
+            //     if (element < 41)
+            //         for(let i=40; i>=element; i--)
+            //             if (!MIDI.noteToKey[i].includes("b"))
+            //             down_pos++;
+            // });
+            // let unit = (pb-MIDICtrl.paper_height)/(up_pos+down_pos);
 
-            //console.log(diff, MIDICtrl.sheet_pos, document.getElementById("paper").firstChild.childNodes[3].getBoundingClientRect().top, document.getElementById("paper").firstChild.childNodes[3].offsetTop);
+            // if (up_pos > 0) document.getElementById("paper").style.paddingBottom = (pb+unit*up_pos) + "%";
+            // if (down_pos > 0) document.getElementById("paper").style.marginTop = (unit*down_pos) + "%";
+            // if (up_pos > 0 && down_pos > 0) document.getElementById("paper").style.marginTop = (unit*(down_pos+2.5)) + "%";
+
+            console.log(document.getElementById("paper").firstChild.childNodes[3].getBoundingClientRect().top);
+
+            // console.log(up_pos, down_pos, document.getElementById("paper").style.marginTop, document.getElementById("paper").style.paddingBottom);
         }
+        //console.log(document.getElementById("paper").style.paddingTop, document.getElementById("paper").style.paddingBottom);
 
     }
 }
