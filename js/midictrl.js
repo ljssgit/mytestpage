@@ -259,7 +259,7 @@ class MIDICtrl {
         document.getElementById("paper").style.marginBottom = 0;
         document.getElementById("paper").style.marginTop = 0;
 
-        ABCJS.renderAbc("paper", abcstring+rhs+lhs, {staffwidth: 100, scale:1.4, responsive: "resize"});
+        ABCJS.renderAbc("paper", abcstring+rhs+lhs, {staffwidth: 150, scale:1.4, responsive: "resize"});
         //위치 보정
         let st = document.getElementById("paper").firstChild.childNodes[3].getBoundingClientRect().top;
         if (MIDICtrl.sheet_pos > 0 && st != MIDICtrl.sheet_pos) {
