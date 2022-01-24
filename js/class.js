@@ -138,8 +138,31 @@ class Chord {
     }
 
     // num -1:random, -2:random(no default form), >0:form change num
-    static change_form(chordtones, num=-1) {
-        if (num<0) num = (1 + parseInt(Math.random()*(chordtones.length-num-1))) % chordtones.length;
+    static change_form(chordtones, num=-1, ranges=["F4", "F4"]) {
+        console.log(ranges, MIDI.keyToNote[ranges[0]], MIDI.keyToNote[ranges[1]]);
+        if(MIDI.keyToNote[ranges[1]]-MIDI.keyToNote[ranges[0]] < 11) {
+            if (num<0) num = (1 + parseInt(Math.random()*(chordtones.length-num-1))) % chordtones.length;
+        }
+        else {
+            let cd_arr = [];
+            let ctlen = chordtones.length;
+            chordtones.reverse();
+            for (let i=0;i<ctlen;i++) {
+                chordtones.splice(0, 0, chordtones.pop());
+                chordtones.reverse();
+                console.log(chordtones);
+                let oct = parseInt(ranges[0][ranges.length-1]);
+                if (chordtones[0] < Note.name2num(ranges[0].substring(0, ranges[0].length-1))) oct += 1
+                if (chordtones[0] > chordtones[chordtones.length-1]) oct += 1
+                if (MIDI.keyToNote[Note.num2name(chordtones[chordtones.length-1], 2)+oct] <= MIDI.keyToNote[ranges[1]])
+                    cd_arr.push(i+1);
+                
+                chordtones.reverse();
+            }
+            chordtones.reverse();
+
+            num = cd_arr[parseInt(Math.random()*(cd_arr.length))];
+        }
         
         chordtones.reverse();
         for (let i=0;i<num;i++) chordtones.splice(0, 0, chordtones.pop());

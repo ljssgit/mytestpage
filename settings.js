@@ -8,3 +8,5 @@ class GlobalVar {
     static timerid = null;
     static chord_timerid = null;
 }
+
+Element.prototype.setAttributes = function(obj){ for(var prop in obj) this.setAttribute(prop, obj[prop]) };

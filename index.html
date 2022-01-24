@@ -33,7 +33,8 @@ function print_chord(chord_text, play_yn) {
     let num = 0;
     if (!document.getElementById("chk_form_0").checked) num=-2;
     else if(document.getElementById("chk_form_1").checked) num=-1;
-    let cdform = Chord.change_form(cdtone, num=num);
+    let ranges = [document.getElementById("chord-range-start").value, document.getElementById("chord-range-end").value];
+    let cdform = Chord.change_form(cdtone, num=num, ranges);
 
     let cdtone_txts = Note.nums2names(cdtone, type=type);
     let top_note = cdtone_txts[cdtone_txts.length-1];
@@ -140,26 +141,16 @@ function init_setting() {
 
     let set_div = document.getElementById("chord_settings");
     //chord setting 생성
-    for (let i in list) {
+    for (var i in list) {
         let div_group = document.createElement("div");
-        div_group.setAttribute("id", "chord_setting_"+i)
-        div_group.setAttribute("class", "input-group mb-3")
+        div_group.setAttribute("id", "chord_setting_"+i);
+        div_group.setAttribute("class", "input-group mb-3");
         for (let j in list[i]) {
-            // set_div.innerHTML +=
-            // "<label for='chk_"+ Chord.nm_list[i]+"_"+j +"' class='label_set'>"
-            // + "<input type='checkbox' class='chk' name='chk_"+Chord.nm_list[i]+"' value='"+j+"' id='chk_"+ Chord.nm_list[i]+"_"+j +"' checked='checked'> "
-            // + list[i][j] + "</label> "
-            // ;
             let div = document.createElement("span");
             div.setAttribute("class", "input-group-text");
-            // div.setAttribute("class", "form-check form-check-inline");
-            // div.setAttribute("class", "btn-group");
-            // div.setAttribute("role", "group");
-            // div.setAttribute("aria-label", "Basic checkbox toggle button group")
             let checkbox = document.createElement("input");
             checkbox.setAttribute("type", "checkbox");
             checkbox.setAttribute("class", "form-check-input");
-            // checkbox.setAttribute("class", "btn-check");
             checkbox.setAttribute("name", "chk_"+Chord.nm_list[i]);
             checkbox.setAttribute("value", ""+j);
             checkbox.setAttribute("id", "chk_"+ Chord.nm_list[i]+"_"+j);
@@ -168,7 +159,6 @@ function init_setting() {
             let label = document.createElement("label");
             label.setAttribute("for", "chk_" + Chord.nm_list[i] + "_" + j);
             label.setAttribute("class", "form-check-label");
-            // label.setAttribute("class", "btn btn-outline-primary");
             div.appendChild(checkbox);
             div.appendChild(label);
 
@@ -179,8 +169,32 @@ function init_setting() {
             div_group.appendChild(div);
         }
         set_div.appendChild(div_group);
-        //set_div.appendChild(document.createElement("br"));
     }
+    let div_group = document.createElement("div");
+    div_group.setAttributes({
+        "id": "chord_setting_"+(i+1),
+        "class": "input-group mb-3",
+    });
+    let div = document.createElement("span");
+    div.setAttribute("class", "input-group-text");
+    let range1 = document.createElement("input");
+    range1.setAttributes({
+        "class":"form-control",
+        "id":"chord-range-start",
+        "style":"width:50px;text-align:center;",
+        "value":"F3",
+    });
+    let range2 = document.createElement("input");
+    range2.setAttributes({
+        "class":"form-control",
+        "id":"chord-range-end",
+        "style":"width:50px;text-align:center;",
+        "value":"E4",
+    });
+    div.appendChild(range1);
+    div.innerHTML += "&nbsp;~&nbsp;";
+    div.appendChild(range2);
+    set_div.appendChild(div)
 
     //초기값설정
     let chks = document.getElementsByName("chk_chordtone");
