@@ -46,36 +46,8 @@ function print_chord(chord_text, play_yn) {
     
     if(MIDICtrl.input) MIDICtrl.input.send(JZZ.MIDI.allNotesOff(0));
     // 피아노 재생
-    if (play_yn) {
-        //Piano.mark_piano(cdtone);
-        let oct = 4;
-        for (let i in cdtone_txts) {
-            // let time = 10000;
-            // if (GlobalVar.BPM > 0) time = 1000*60/GlobalVar.BPM;
-            if ((i==0 && cdtone[i] < Note.name2num("F")) || (i>0 && cdtone[i]<cdtone[i-1])) oct++;
-
-            MIDICtrl.input.noteOn(0, cdtone_txts[i]+oct, parseInt(127*(GlobalVar.VOLUME/100)));
-            //JZZ().openMidiIn(MIDICtrl.input.name()).note(0, cdtone_txts[i]+"5", parseInt(127*(GlobalVar.VOLUME/100)), time);
-        }
-    }
+    if (play_yn) play_piano(cdtone_txts);
     
-    // 시간 counting
-    clearInterval(GlobalVar.timerid);
-
-    let start_time = Date.now();
-    if (GlobalVar.BPM > 0) start_time += 1000*60/GlobalVar.BPM;
-    GlobalVar.timerid = setInterval(
-        function(stime){
-            elapse = Date.now() - stime;
-            document.getElementById("time").innerText = (Math.abs(elapse) / 1000).toFixed(1);
-            if (elapse < 0 && elapse > -100) {
-                document.getElementById("time").innerText = "0.0";
-                clearInterval(GlobalVar.timerid);
-            }
-        },
-        50,
-        start_time
-    )
 }
 
 function get_inversion_settings() {
@@ -91,33 +63,79 @@ function get_inversion_settings() {
     return inv_settings;
 }
 
-function auto_print_chord() {
-    clearTimeout(GlobalVar.chord_timerid);
+function play_piano(cdtone) {
+    let oct = 4;
+    for (let i in cdtone) {
+        if ((i==0 && cdtone[i] < Note.name2num("F")) || (i>0 && cdtone[i]<cdtone[i-1])) oct++;
 
-    GlobalVar.chord_timerid = setTimeout(
-        function timer() {
-            GlobalVar.chord_timerid = null;
-            //GlobalVar.timerid = null;
-            // if (idx < chord_arr.length) {
-            //     print_chord(chord_arr[idx], true);
-            //     setTimeout(timer, 1000*60/GlobalVar.BPM, idx+1);
-            // }
-            if (PlayingChordList.isLast()) {
-                if (cur_song_idx == -1) {
-                    let ids = get_checked_ids();
-                    let chords = Chord.rand_chords_generate(ids, 1000);
-                    PlayingChordList.setChords(chords);
-                }
+        ///
+        if (document.getElementById("chord-root-inv").checked) {
+            if(i==0) {
+                if(cdtone[i] < Note.name2num("F")) oct=4;
+                else oct=3;
             }
-
-            let chord = PlayingChordList.next();
-            let play_yn = (GlobalVar.MODE == 0);
-            print_chord(chord, play_yn);
-
-            if (GlobalVar.BPM > 0) GlobalVar.chord_timerid = setTimeout(timer, 1000*60/GlobalVar.BPM);
+            else if(i == 1) {
+                if(cdtone[i] < Note.name2num("F")) oct=5;
+                else oct=4;
+            }
         }
-        , 0
-    );
+        ///
+
+        MIDICtrl.input.noteOn(0, Note.num2name(cdtone[i], 1)+oct, parseInt(127*(GlobalVar.VOLUME/100)));
+    }
+}
+
+function auto_print_chord() {
+    if (PlayingChordList.isLast()) {
+        if (cur_song_idx == -1) {
+            let ids = get_checked_ids();
+            let chords = Chord.rand_chords_generate(ids, 100);
+            PlayingChordList.setChords(chords);
+        }
+    }
+
+    let chord = PlayingChordList.next();
+    let play_yn = (GlobalVar.MODE == 0);
+    print_chord(chord, play_yn);
+
+    let next_chord = PlayingChordList.next();
+    document.getElementById("next_chord").innerText = next_chord;
+    PlayingChordList.prev();
+
+    // 시간 counting
+    clearInterval(GlobalVar.timerid);
+
+    let start_time = Date.now();
+    if (GlobalVar.BPM > 0) start_time += 1000*60/GlobalVar.BPM;
+    GlobalVar.timerid = setInterval(
+        function(stime){
+            elapse = Date.now() - stime;
+            document.getElementById("time").innerText = (Math.abs(elapse) / 1000).toFixed(1);
+            if (elapse > -100 && GlobalVar.BPM > 0) {
+                document.getElementById("time").innerText = "0.0";
+                clearInterval(GlobalVar.timerid);
+
+                GlobalVar.next_chord_term = true;
+                document.getElementById("chord").style.color = "red";
+                document.getElementById("time").style.color = "red";
+                let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
+                play_piano(Note.names2nums(ct));
+                setTimeout(
+                    function(){
+                        //print_chord(PlayingChordList.next());
+                        auto_print_chord();
+                        document.getElementById("chord").style.color = "";
+                        document.getElementById("time").style.color = "";
+                        GlobalVar.next_chord_term = false;
+                    }
+                    , 3000
+                );
+            }
+        },
+        100,
+        start_time
+    )
+    // if (GlobalVar.BPM > 0) GlobalVar.chord_timerid = setTimeout(timer, 1000*60/GlobalVar.BPM);
 }
 
 function is_correct() {
@@ -133,7 +151,8 @@ function is_correct() {
     ) {//&&  Math.min.apply(null, playing_notes)%12 == ct[0]) {
         for (i in playing_notes) playing_notes[i] = playing_notes[i]%12;
 
-        //playing_notes = ct;
+        // 치트키
+        // playing_notes = ct;
         correct = true;
         for (i in ct) {
             if (playing_notes.indexOf(ct[i]) < 0) {
@@ -142,7 +161,7 @@ function is_correct() {
             }
         }
     }
-
+    //test
     return correct;
 }
 
@@ -226,9 +245,10 @@ function init_setting() {
     // 이벤트 리스너 설정
     // next btn
     document.querySelector('#next_btn').addEventListener('click',function(){
-        if (GlobalVar.MODE == 0) {auto_print_chord();}
-        else if (GlobalVar.MODE == 1) {print_chord(PlayingChordList.next());}
-        else {alert("오류 !");}
+        // if (GlobalVar.MODE == 0) {auto_print_chord();}
+        // else if (GlobalVar.MODE == 1) {print_chord(PlayingChordList.next());}
+        // else {alert("오류 !");}
+        auto_print_chord();
         //change_mode(GlobalVar.MODE);
     });
     // mode change
@@ -289,7 +309,7 @@ function change_mode(mode) {
 
     if(GlobalVar.cur_song_idx < 0) {
         ids = get_checked_ids();
-        chords = Chord.rand_chords_generate(ids, 1000);
+        chords = Chord.rand_chords_generate(ids, 100);
     }
     else {
         chords = GlobalVar.songs[GlobalVar.cur_song_idx].chord_list;
@@ -376,7 +396,13 @@ window.onload = () => {
     left: 50%;
     transform: translate(-50%, -50%); */
 }
-
+#next_chord {
+    position:absolute;
+    right:5vw;
+    top: 40%;
+    transform: translateY(-50%);
+    font-size:10vmin;
+}
 .top_right_btns {
     position:absolute;
     right:0;
@@ -389,7 +415,7 @@ window.onload = () => {
     </div>
     <div style="position:absolute;left:0;top:0;" id="version"></div>
     <div class="top_right_btns">
-        <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearTimeout(GlobalVar.chord_timerid);"
+        <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearInterval(GlobalVar.timerid);"
             data-bs-toggle="offcanvas" data-bs-target="#offcanvasTop" aria-controls="offcanvasTop">
             <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16">
                 <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
@@ -464,6 +490,7 @@ window.onload = () => {
             &nbsp;
         </div>
     </div>
+    <b><div id="next_chord"> &nbsp; </div></b>
     <br/>
     <div id="piano"></div>
 </body>

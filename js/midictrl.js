@@ -84,18 +84,18 @@ class MIDICtrl {
         let thru = await JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
             MIDICtrl.render(MIDICtrl.playing_notes());
-            if (is_correct() && GlobalVar.chord_timerid == null) {
+            if (is_correct() && GlobalVar.next_chord_term == false) {
                 clearInterval(GlobalVar.timerid);
-                clearInterval(GlobalVar.chord_timerid);
+                GlobalVar.next_chord_term = true;
                 document.getElementById("chord").style.color = "blue";
                 document.getElementById("time").style.color = "blue";
-                GlobalVar.chord_timerid = setTimeout(
+                setTimeout(
                     function(){
                         //print_chord(PlayingChordList.next());
                         auto_print_chord();
-                        GlobalVar.chord_timerid = null;
                         document.getElementById("chord").style.color = "";
                         document.getElementById("time").style.color = "";
+                        GlobalVar.next_chord_term = false;
                     }
                     , 1000
                 );
@@ -142,6 +142,7 @@ class MIDICtrl {
         });
 
         //JZZ.addMidiOut('MIDIjs', MIDICtrl.midijs);
+        MIDICtrl.render(MIDICtrl.playing_notes());
         MIDICtrl.sheet_pos = document.getElementById("paper").firstChild.childNodes[3].getBoundingClientRect().top;
         console.log("note 위치 변경!");
         document.getElementById("paper").firstChild.childNodes.forEach((element)=>{
@@ -262,6 +263,7 @@ class MIDICtrl {
         document.getElementById("paper").style.marginTop = 0;
 
         ABCJS.renderAbc("paper", abcstring+rhs+lhs, {staffwidth: 150, scale:1.4, responsive: "resize"});
+        
         //위치 보정
         let st = document.getElementById("paper").firstChild.childNodes[3].getBoundingClientRect().top;
         if (MIDICtrl.sheet_pos > 0 && st != MIDICtrl.sheet_pos) {

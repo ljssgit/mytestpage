@@ -35,7 +35,7 @@ class Note {
     static names2nums(names) {
         let num_list = [];
         for (let i in names)
-            num_list.append(Note.name2num(names[i]));
+            num_list.push(Note.name2num(names[i]));
 
         return num_list;
     }
@@ -217,6 +217,12 @@ class PlayingChordList {
 
     static isLast() {
         if (this.cur_idx >= this.chords.length-1)
+            return true;
+        return false;
+    }
+
+    static isLastN(n) {
+        if (this.cur_idx >= this.chords.length-1-n)
             return true;
         return false;
     }
