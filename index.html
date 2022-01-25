@@ -20,7 +20,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 3;
+VERSION = 4;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -81,7 +81,7 @@ function play_piano(cdtone) {
         }
         ///
 
-        MIDICtrl.input.noteOn(0, Note.num2name(cdtone[i], 1)+oct, parseInt(127*(GlobalVar.VOLUME/100)));
+        MIDICtrl.kbd.noteOn(0, Note.num2name(cdtone[i], 1)+oct, parseInt(127*(GlobalVar.VOLUME/100)));
     }
 }
 
@@ -119,6 +119,7 @@ function auto_print_chord() {
                 document.getElementById("chord").style.color = "red";
                 document.getElementById("time").style.color = "red";
                 let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
+                MIDICtrl.input.disconnect(MIDICtrl.kbd);
                 play_piano(Note.names2nums(ct));
                 setTimeout(
                     function(){
@@ -127,6 +128,7 @@ function auto_print_chord() {
                         document.getElementById("chord").style.color = "";
                         document.getElementById("time").style.color = "";
                         GlobalVar.next_chord_term = false;
+                        MIDICtrl.input.connect(MIDICtrl.kbd);
                     }
                     , 3000
                 );
