@@ -20,7 +20,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 4;
+VERSION = 1.01;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -44,7 +44,7 @@ function print_chord(chord_text, play_yn) {
     document.getElementById("chordtone").innerHTML = cdtone_txts.join(", ");
     //Piano.clear_piano();
     
-    if(MIDICtrl.input) MIDICtrl.input.send(JZZ.MIDI.allNotesOff(0));
+    if(MIDICtrl.kbd) MIDICtrl.kbd.send(JZZ.MIDI.allNotesOff(0));
     // 피아노 재생
     if (play_yn) play_piano(cdtone_txts);
     
