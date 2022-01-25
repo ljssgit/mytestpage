@@ -42,10 +42,10 @@ class Note {
 }
 
 class Chord {
-    static nm_list = ["note", "chordtone", "tension", "form"];
+    static nm_list = ["note", "chordtone", "tension", "inversion"];
     static chordtones = ["", "add2", "7", "m7", "M7", "7sus4", "mM7", "dim7", "6", "m6", "m7(b5)"];
     static tensions = ["", "b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
-    static forms = ["", "전위"];
+    static inversions = ["", "전위"];
 
     constructor() {}
 
@@ -98,20 +98,20 @@ class Chord {
         // ===== tension 미추가 =====
 
         // 전위
-        // this.forms.reverse();
+        // this.inversions.reverse();
         // result.splice(1, 0, result.pop());
-        // for (let i in this.forms) {
-        //     if (chord_nm.indexOf(this.forms[i]) > -1) break;
+        // for (let i in this.inversions) {
+        //     if (chord_nm.indexOf(this.inversions[i]) > -1) break;
         //     result.splice(1, 0, result.pop());
         // }
-        // this.forms.reverse();
+        // this.inversions.reverse();
 
         return result;
     }
 
-    // ids = [note_ids, add_ids, tension_ids, form_ids]
+    // ids = [note_ids, add_ids, tension_ids, inversion_ids]
     static rand_chords_generate(ids, size=1) {
-        let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.forms];
+        let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.inversions];
         let rand_chords = [];
         for (let arr_idx=0;arr_idx<size;arr_idx++) {
             let chord = "";
@@ -137,9 +137,13 @@ class Chord {
         return rand_chords;
     }
 
-    // num -1:random, -2:random(no default form), >0:form change num
-    static change_form(chordtones, num=-1, ranges=["F4", "F4"]) {
-        console.log(ranges, MIDI.keyToNote[ranges[0]], MIDI.keyToNote[ranges[1]]);
+    // num -1:random, -2:random(no default inversion), >0:inversion change num
+    static change_inversion(chordtones, inv_settings={num:0, ranges:["F3", "F3"], root_inv:true}) {
+        let num = inv_settings.num;
+        let ranges = inv_settings.ranges;
+        let root_inv = inv_settings.root_inv;
+        let root = undefined;
+        if (!root_inv && chordtones.length > 3) root = chordtones.splice(0,1);
         if(MIDI.keyToNote[ranges[1]]-MIDI.keyToNote[ranges[0]] < 11) {
             if (num<0) num = (1 + parseInt(Math.random()*(chordtones.length-num-1))) % chordtones.length;
         }
@@ -150,7 +154,6 @@ class Chord {
             for (let i=0;i<ctlen;i++) {
                 chordtones.splice(0, 0, chordtones.pop());
                 chordtones.reverse();
-                console.log(chordtones);
                 let oct = parseInt(ranges[0][ranges.length-1]);
                 if (chordtones[0] < Note.name2num(ranges[0].substring(0, ranges[0].length-1))) oct += 1
                 if (chordtones[0] > chordtones[chordtones.length-1]) oct += 1
@@ -167,6 +170,9 @@ class Chord {
         chordtones.reverse();
         for (let i=0;i<num;i++) chordtones.splice(0, 0, chordtones.pop());
         chordtones.reverse();
+
+        num = num%chordtones.length;
+        if (!root_inv && typeof root != "undefined") chordtones.splice(0,0,root);
 
         return num;
     }
@@ -230,7 +236,7 @@ class SheetMusic {
             let chord_split = chord_list[i].split(".");
             let chord = chord_split[0];
             if (chord_split.length > 1)
-                chord += Chord.forms[parseInt(chord_split[1])];
+                chord += Chord.inversions[parseInt(chord_split[1])];
             
             this.chord_list.push(chord);
         }

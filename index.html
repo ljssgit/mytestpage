@@ -30,20 +30,17 @@ function print_chord(chord_text, play_yn) {
         else if (chord_text[1] == "b") type = 2;
     }
     let cdtone = Chord.chordtone(chord_text);
-    let num = 0;
-    if (!document.getElementById("chk_form_0").checked) num=-2;
-    else if(document.getElementById("chk_form_1").checked) num=-1;
-    let ranges = [document.getElementById("chord-range-start").value, document.getElementById("chord-range-end").value];
-    let cdform = Chord.change_form(cdtone, num=num, ranges);
+    let cd_inversion = Chord.change_inversion(cdtone, get_inversion_settings());
 
     let cdtone_txts = Note.nums2names(cdtone, type=type);
     let top_note = cdtone_txts[cdtone_txts.length-1];
 
-    // if (cdform == 0) var s = "전위 X";
-    // else var s = cdform + "전위";
-    // document.getElementById("chordform").innerHTML = `Top note : ${top_note}, [ ${s} ]`;
-
-    document.getElementById("chordform").innerHTML = `Top note : <b>${top_note}</b>`;
+    if (cd_inversion == 0) var s = "전위X";
+    //else var s = cd_inversion + "전위&nbsp;&nbsp;| " + cdtone_txts[0] + "/" + chord_text;
+    else var s = cd_inversion + "전위";
+    // document.getElementById("chordinversion").innerHTML = `Top note : ${top_note}, [ ${s} ]`;
+    // document.getElementById("chord_inversion").innerHTML = `Top note : <b>${top_note}</b>`;
+    document.getElementById("chord_inversion").innerHTML = `<b>${s}</b>`;
     document.getElementById("chordtone").innerHTML = cdtone_txts.join(", ");
     //Piano.clear_piano();
     
@@ -79,6 +76,19 @@ function print_chord(chord_text, play_yn) {
         50,
         start_time
     )
+}
+
+function get_inversion_settings() {
+    let inv_settings = { num:0, ranges:undefined, root_inv:true, };
+    if (!document.getElementById("chk_inversion_0").checked) inv_settings.num=-2;
+    else if(document.getElementById("chk_inversion_1").checked) inv_settings.num=-1;
+    inv_settings.ranges = [document.getElementById("chord-range-start").value, document.getElementById("chord-range-end").value];
+
+    ///
+    if (document.getElementById("chord-root-inv").checked) inv_settings.root_inv = false;
+    ///
+
+    return inv_settings;
 }
 
 function auto_print_chord() {
@@ -137,7 +147,7 @@ function is_correct() {
 }
 
 function init_setting() {
-    let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.forms]
+    let list = [Note.names, Chord.chordtones, Chord.tensions, Chord.inversions]
 
     let set_div = document.getElementById("chord_settings");
     //chord setting 생성
@@ -194,6 +204,17 @@ function init_setting() {
     div.appendChild(range1);
     div.innerHTML += "&nbsp;~&nbsp;";
     div.appendChild(range2);
+    ///
+    div.innerHTML += "&nbsp;&nbsp;";
+    let root = document.createElement("input");
+    root.setAttributes({
+        "type":"checkbox",
+        "class":"form-check-input",
+        "id":"chord-root-inv",
+    });
+    div.appendChild(root);
+    div.innerHTML += "<label for='chord-root-inv' class='form-check-label'>&nbsp;루트 전위x</label>";
+    ///
     set_div.appendChild(div)
 
     //초기값설정
@@ -430,7 +451,7 @@ window.onload = () => {
         <div id="chord" style="margin-left:35vw;font-size:14vmin;text-align:left">
             &nbsp;
         </div>
-        <div id="chordform" style="margin-left:35vw;font-size:10vmin;text-align:left">
+        <div id="chord_inversion" style="margin-left:35vw;font-size:10vmin;text-align:left">
             &nbsp;
         </div>
         <!-- <div id="chordtone" class="mb-3" style="font-size:6vmin;text-align:center">
