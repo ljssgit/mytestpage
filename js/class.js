@@ -172,7 +172,7 @@ class Chord {
         chordtones.reverse();
 
         num = num%chordtones.length;
-        if (!root_inv && typeof root != "undefined") chordtones.splice(0,0,root);
+        if (!root_inv && typeof root != "undefined") chordtones.splice(0,0,root)
 
         return num;
     }

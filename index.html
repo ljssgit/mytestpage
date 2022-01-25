@@ -20,7 +20,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 1.03;
+VERSION = 1.04;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -87,10 +87,11 @@ function play_piano(cdtone) {
 }
 
 function auto_print_chord() {
-    if (PlayingChordList.isLast()) {
-        if (cur_song_idx == -1) {
+    if (PlayingChordList.isLastN(2)) {
+        if (GlobalVar.cur_song_idx == -1) {
             let ids = get_checked_ids();
-            let chords = Chord.rand_chords_generate(ids, 100);
+            let chords = Chord.rand_chords_generate(ids, 5);
+            chords.splice(0,0,PlayingChordList.next());
             PlayingChordList.setChords(chords);
         }
     }
@@ -312,7 +313,7 @@ function change_mode(mode) {
 
     if(GlobalVar.cur_song_idx < 0) {
         ids = get_checked_ids();
-        chords = Chord.rand_chords_generate(ids, 100);
+        chords = Chord.rand_chords_generate(ids, 5);
     }
     else {
         chords = GlobalVar.songs[GlobalVar.cur_song_idx].chord_list;
