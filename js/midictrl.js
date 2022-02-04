@@ -1,5 +1,6 @@
 class MIDICtrl {
     static input = undefined;
+    static in_thru = undefined;
     static kbd = undefined;
     static thru = undefined;
     static output = undefined;
@@ -34,6 +35,12 @@ class MIDICtrl {
 
             return sizes;
         }
+
+        let in_thru = JZZ.Widget({ _receive: function(msg) {
+            if(!this.blocked) this.emit(msg);
+            else this.emit(JZZ.MIDI.active());
+        }})
+        in_thru.blocked = false;
 
         let key_sizes = getKeySizes();
         let kbd = await JZZ.input.Kbd({at:'piano', from:'A1', to:'C9',//from:'A0', to:'C8',
@@ -83,6 +90,7 @@ class MIDICtrl {
 
         let thru = await JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
+            // console.log(msg.toString());
             MIDICtrl.render(MIDICtrl.playing_notes());
             if (is_correct() && GlobalVar.next_chord_term == false) {
                 clearInterval(GlobalVar.timerid);
@@ -103,11 +111,13 @@ class MIDICtrl {
         }});
 
         this.input = default_in_midi;
+        this.in_thru=in_thru;
         this.kbd=kbd;
         this.thru=thru;
         this.output = default_out_midi;
 
-        default_in_midi.connect(kbd);
+        default_in_midi.connect(in_thru);
+        in_thru.connect(kbd);
         kbd.connect(thru);
         thru.connect(default_out_midi)
 
@@ -120,9 +130,9 @@ class MIDICtrl {
                 let reverse_idx = this.info().outputs.length-i-1;
                 selectMidiOut[i] = new Option(this.info().outputs[reverse_idx].name);
             }
-            // selectMidiOut[2].selected = 1; //midijs
+            // selectMidiOut[2].selected = 1; //midijs - 삭제
             // selectMidiOut[1].selected = 1; //synth
-            selectMidiOut[0].selected = 1; // 연결장비
+            selectMidiOut[2].selected = 1; // 연결장비
             // if (!i) {
             //     selectMidiOut[i] = new Option('Not available');
             // }
@@ -167,7 +177,7 @@ class MIDICtrl {
         if (typeof idx != "number") idx = selectMidiIn.selectedIndex;
         let name = selectMidiIn.options[idx].value;
         if (name == MIDICtrl.input.name()) return;
-        if (MIDICtrl.input) MIDICtrl.input.disconnect(MIDICtrl.kbd);
+        if (MIDICtrl.input) MIDICtrl.input.disconnect(MIDICtrl.in_thru);
         // if (name == 'Virtual_in') {
         //     if (midiInPort) midiInPort.close();
         //     midiInPort = piano;
@@ -210,18 +220,18 @@ class MIDICtrl {
     }
     
     static onMidiInSuccess() {
-        if (MIDICtrl.input && MIDICtrl.input != MIDICtrl.kbd) {
+        if (MIDICtrl.input) {
             MIDICtrl.input.close();
         }
         MIDICtrl.input = this;
-        this.connect(MIDICtrl.kbd);
+        this.connect(MIDICtrl.in_thru);
         let midiInName = this.name();
         let selectMidiIn = document.getElementById('selectmidiin');
         MIDICtrl.setListbox(selectMidiIn, midiInName);
     }
     
     static onMidiInFail() {
-        if (MIDICtrl.input) MIDICtrl.input.connect(MIDICtrl.kbd);
+        if (MIDICtrl.input) MIDICtrl.input.connect(MIDICtrl.in_thru);
         let selectMidiIn = document.getElementById('selectmidiin');
         let midiInName = this.name();
         MIDICtrl.setListbox(selectMidiIn, midiInName);
