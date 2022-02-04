@@ -201,6 +201,7 @@ class MIDICtrl {
         let midiOutName = this.name();
         let selectMidiOut = document.getElementById('selectmidiout');
         MIDICtrl.setListbox(selectMidiOut, midiOutName);
+        document.getElementById('debug').innerText += "out : " + midiOutName;
     }
     
     static onMidiOutFail() {
@@ -219,6 +220,7 @@ class MIDICtrl {
         let midiInName = this.name();
         let selectMidiIn = document.getElementById('selectmidiin');
         MIDICtrl.setListbox(selectMidiIn, midiInName);
+        document.getElementById('debug').innerText += "in : " + midiInName;
     }
     
     static onMidiInFail() {
