@@ -178,7 +178,7 @@ class MIDICtrl {
 
     static changeMidiOut(idx) {
         let selectMidiOut = document.getElementById('selectmidiout');
-        if (typeof idx == "undefined") idx = selectMidiOut.selectedIndex;
+        if (typeof idx != "number") idx = selectMidiOut.selectedIndex;
         let name = selectMidiOut.options[idx].value;
         if (name == MIDICtrl.output.name()) return;
         if (MIDICtrl.output) MIDICtrl.thru.disconnect(MIDICtrl.output);

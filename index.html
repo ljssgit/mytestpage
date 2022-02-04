@@ -20,7 +20,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 1.05;
+VERSION = 1.06;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -420,6 +420,7 @@ window.onload = () => {
         <div id="paper"></div>
     </div>
     <div style="position:absolute;left:0;top:0;" id="version"></div>
+    <div style="position:absolute;left:0;top:20px;" id="debug"></div>
     <div class="top_right_btns">
         <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearInterval(GlobalVar.timerid);"
             data-bs-toggle="offcanvas" data-bs-target="#offcanvasTop" aria-controls="offcanvasTop">
