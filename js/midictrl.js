@@ -121,7 +121,8 @@ class MIDICtrl {
                 selectMidiOut[i] = new Option(this.info().outputs[reverse_idx].name);
             }
             // selectMidiOut[2].selected = 1; //midijs
-            selectMidiOut[1].selected = 1;
+            // selectMidiOut[1].selected = 1; //synth
+            selectMidiOut[0].selected = 1; // 연결장비
             // if (!i) {
             //     selectMidiOut[i] = new Option('Not available');
             // }
@@ -129,7 +130,7 @@ class MIDICtrl {
                 let reverse_idx = this.info().inputs.length-i-1;
                 selectMidiIn[i] = new Option(this.info().inputs[reverse_idx].name);
             }
-            selectMidiIn[i-1].selected = 1;
+            selectMidiIn[i-1].selected = 1; // 연결장비
             
             //selectMidiIn[i] = new Option('HTML Piano');
             //selectMidiIn[i].selected = 1;
