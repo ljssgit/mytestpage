@@ -132,7 +132,8 @@ class MIDICtrl {
             }
             // selectMidiOut[2].selected = 1; //midijs - 삭제
             // selectMidiOut[1].selected = 1; //synth
-            selectMidiOut[2].selected = 1; // 연결장비
+            if (i > 2) selectMidiOut[2].selected = 1; // 연결장비
+            else selectMidiOut[1].selected = 1; //synth
             // if (!i) {
             //     selectMidiOut[i] = new Option('Not available');
             // }
@@ -238,7 +239,7 @@ class MIDICtrl {
     }
 
     static render(arr) {
-        let abcstring = "X:1\nK:C\n%%staves {(PianoRightHand) (PianoLeftHand)}\nV:PianoRightHand clef=treble\nV:PianoLeftHand clef=bass\n";
+        let abcstring = "X:1\nM:C\nK:C\n%%staves {(PianoRightHand) (PianoLeftHand)}\nV:PianoRightHand clef=treble\nV:PianoLeftHand clef=bass\n";
         let notes = arr;
         let rh = "";
         let lh = "";
