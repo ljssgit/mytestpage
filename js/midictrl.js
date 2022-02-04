@@ -161,9 +161,10 @@ class MIDICtrl {
         return playing_notes;
     }
     
-    static changeMidiIn() {
+    static changeMidiIn(idx) {
         let selectMidiIn = document.getElementById('selectmidiin');
-        let name = selectMidiIn.options[selectMidiIn.selectedIndex].value;
+        if (typeof idx == "undefined") idx = selectMidiIn.selectedIndex;
+        let name = selectMidiIn.options[idx].value;
         if (name == MIDICtrl.input.name()) return;
         if (MIDICtrl.input) MIDICtrl.input.disconnect(MIDICtrl.kbd);
         // if (name == 'Virtual_in') {
@@ -175,9 +176,10 @@ class MIDICtrl {
         JZZ().openMidiIn(name).or(MIDICtrl.onMidiInFail).and(MIDICtrl.onMidiInSuccess);
     }
 
-    static changeMidiOut() {
+    static changeMidiOut(idx) {
         let selectMidiOut = document.getElementById('selectmidiout');
-        let name = selectMidiOut.options[selectMidiOut.selectedIndex].value;
+        if (typeof idx == "undefined") idx = selectMidiOut.selectedIndex;
+        let name = selectMidiOut.options[idx].value;
         if (name == MIDICtrl.output.name()) return;
         if (MIDICtrl.output) MIDICtrl.thru.disconnect(MIDICtrl.output);
         

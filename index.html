@@ -20,7 +20,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 1.04;
+VERSION = 1.05;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -65,6 +65,7 @@ function get_inversion_settings() {
 
 function play_piano(cdtone) {
     let oct = 4;
+    MIDICtrl.changeMidiIn(0);
     MIDICtrl.kbd.send(JZZ.MIDI.allNotesOff(0));
     for (let i in cdtone) {
         if ((i==0 && cdtone[i] < Note.name2num("F")) || (i>0 && cdtone[i]<cdtone[i-1])) oct++;
@@ -84,6 +85,7 @@ function play_piano(cdtone) {
 
         MIDICtrl.kbd.noteOn(0, Note.num2name(cdtone[i], 1)+oct, parseInt(127*(GlobalVar.VOLUME/100)));
     }
+    MIDICtrl.changeMidiIn();
 }
 
 function auto_print_chord() {
