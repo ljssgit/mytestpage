@@ -163,7 +163,7 @@ class MIDICtrl {
     
     static changeMidiIn(idx) {
         let selectMidiIn = document.getElementById('selectmidiin');
-        if (typeof idx == "undefined") idx = selectMidiIn.selectedIndex;
+        if (typeof idx != "number") idx = selectMidiIn.selectedIndex;
         let name = selectMidiIn.options[idx].value;
         if (name == MIDICtrl.input.name()) return;
         if (MIDICtrl.input) MIDICtrl.input.disconnect(MIDICtrl.kbd);
@@ -183,9 +183,7 @@ class MIDICtrl {
         if (name == MIDICtrl.output.name()) return;
         if (MIDICtrl.output) MIDICtrl.thru.disconnect(MIDICtrl.output);
         
-        MIDICtrl.output = JZZ().openMidiOut(name)
-            .and(MIDICtrl.onMidiOutSuccess)
-            .or(MIDICtrl.onMidiOutFail);
+        JZZ().openMidiOut(name).and(MIDICtrl.onMidiOutSuccess).or(MIDICtrl.onMidiOutFail);
     }
     
     static setListbox(lb, s) {
@@ -201,7 +199,6 @@ class MIDICtrl {
         let midiOutName = this.name();
         let selectMidiOut = document.getElementById('selectmidiout');
         MIDICtrl.setListbox(selectMidiOut, midiOutName);
-        document.getElementById('debug').innerText += "out : " + midiOutName;
     }
     
     static onMidiOutFail() {
@@ -220,7 +217,6 @@ class MIDICtrl {
         let midiInName = this.name();
         let selectMidiIn = document.getElementById('selectmidiin');
         MIDICtrl.setListbox(selectMidiIn, midiInName);
-        document.getElementById('debug').innerText += "in : " + midiInName;
     }
     
     static onMidiInFail() {
