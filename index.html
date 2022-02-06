@@ -20,7 +20,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 1.09;
+VERSION = 1.10;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -87,17 +87,24 @@ function play_piano(cdtone) {
 }
 
 function auto_print_chord() {
+    document.getElementById("txts").classList.remove("text-white");
+    document.getElementById("txts").classList.remove("bg-danger");
+    document.getElementById("txts").classList.remove("bg-success");
+    GlobalVar.next_chord_term = false;
+    if(MIDICtrl.in_thru) MIDICtrl.in_thru.blocked = false;
+
     if (PlayingChordList.isLastN(2)) {
         if (GlobalVar.cur_song_idx == -1) {
             let ids = get_checked_ids();
-            let chords = Chord.rand_chords_generate(ids, 5);
-            chords.splice(0,0,PlayingChordList.next());
+            let chords = Chord.rand_chords_generate(ids, 4);
+            let cd = PlayingChordList.next();
+            if (cd) chords.splice(0,0,cd);
             PlayingChordList.setChords(chords);
         }
     }
 
     let chord = PlayingChordList.next();
-    let play_yn = (GlobalVar.MODE == 0);
+    let play_yn = false;//(GlobalVar.MODE == 0);
     print_chord(chord, play_yn);
 
     let next_chord = PlayingChordList.next();
@@ -106,7 +113,6 @@ function auto_print_chord() {
 
     // 시간 counting
     clearInterval(GlobalVar.timerid);
-
     let start_time = Date.now();
     if (GlobalVar.BPM > 0) start_time += 1000*60/GlobalVar.BPM;
     GlobalVar.timerid = setInterval(
@@ -118,21 +124,19 @@ function auto_print_chord() {
                 clearInterval(GlobalVar.timerid);
 
                 GlobalVar.next_chord_term = true;
-                document.getElementById("chord").style.color = "red";
-                document.getElementById("time").style.color = "red";
+                document.getElementById("txts").classList.add("text-white");
+                document.getElementById("txts").classList.add("bg-danger");
                 let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
                 // MIDICtrl.input.disconnect(MIDICtrl.kbd);
                 MIDICtrl.in_thru.blocked = true;
+                // MIDICtrl.in_thru.blocked = true;
                 play_piano(Note.names2nums(ct));
-                setTimeout(
+                if(MIDICtrl.input.name() != "None") PlayingChordList.chords.push(PlayingChordList.cur());
+                GlobalVar.timerid = setTimeout(
                     function(){
                         //print_chord(PlayingChordList.next());
                         auto_print_chord();
-                        document.getElementById("chord").style.color = "";
-                        document.getElementById("time").style.color = "";
-                        GlobalVar.next_chord_term = false;
                         // MIDICtrl.input.connect(MIDICtrl.kbd);
-                        MIDICtrl.in_thru.blocked = false;
                     }
                     , 3000
                 );
@@ -145,8 +149,6 @@ function auto_print_chord() {
 }
 
 function is_correct() {
-    if (GlobalVar.MODE != 1) return false;
-
     let correct = false;
     let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
     for (i in ct) ct[i] = JZZ.MIDI.noteValue(ct[i]+"5")%12;
@@ -251,30 +253,13 @@ function init_setting() {
     // 이벤트 리스너 설정
     // next btn
     document.querySelector('#next_btn').addEventListener('click',function(){
-        // if (GlobalVar.MODE == 0) {auto_print_chord();}
-        // else if (GlobalVar.MODE == 1) {print_chord(PlayingChordList.next());}
-        // else {alert("오류 !");}
         auto_print_chord();
-        //change_mode(GlobalVar.MODE);
     });
     // mode change
-    document.getElementsByName("mode").forEach((elem) => {
-        elem.addEventListener('change',function(){
-            //change_mode(this.value);
-            GlobalVar.MODE = this.value;
-        })
-    });
-    // piano click
-    // document.getElementById("piano").addEventListener('click',function(){
-    //     if (is_correct() == true) {
-    //         setTimeout(
-    //                 function(){
-    //                     //Piano.clear_piano();
-    //                     print_chord(PlayingChordList.next());
-    //                 }
-    //                 , 1000
-    //             );
-    //     }
+    // document.getElementsByName("mode").forEach((elem) => {
+    //     elem.addEventListener('change',function(){
+    //         GlobalVar.MODE = this.value;
+    //     })
     // });
 
     //파일 업로드
@@ -290,7 +275,6 @@ function init_setting() {
         }
         reader.onerror = function (e) {
             GlobalVar.cur_song_idx = -1;
-            change_mode(GlobalVar.MODE);
         }
     });
 }
@@ -307,36 +291,6 @@ function get_checked_ids() {
     return ids;
 }
 
-function change_mode(mode) {
-    GlobalVar.MODE = mode;
-    clearTimeout(GlobalVar.chord_timerid);
-    //Piano.clear_piano();
-    let chords = [];
-
-    if(GlobalVar.cur_song_idx < 0) {
-        ids = get_checked_ids();
-        chords = Chord.rand_chords_generate(ids, 5);
-    }
-    else {
-        chords = GlobalVar.songs[GlobalVar.cur_song_idx].chord_list;
-    }
-    PlayingChordList.setChords(chords);
-
-    // 모드 0: 자동 코드
-    if (mode == 0) {
-        document.getElementById("chordtone").style.display = "block";
-        console.log("자동 모드 전환");
-        auto_print_chord();
-    }
-    // 모드 2: 맞추기
-    else if (mode == 1) {
-        //document.getElementById("chordtone").style.display = "none";
-        console.log("맞추기 모드 전환");
-        auto_print_chord();
-        //print_chord(PlayingChordList.next());
-    }
-}
-
 function change_setting() {
     GlobalVar.VOLUME=document.getElementById('volume').value;
     GlobalVar.BPM = document.getElementById("bpm").value;
@@ -345,7 +299,7 @@ function change_setting() {
     MIDICtrl.output.send(msgs[0]);
     MIDICtrl.output.send(msgs[1]);
 
-    change_mode(GlobalVar.MODE);
+    auto_print_chord();
 }
 
 window.onload = () => {
@@ -356,9 +310,14 @@ window.onload = () => {
     v = document.getElementById('version')
     v.innerHTML = "VERSION : "+VERSION;
     init_setting();
-    change_mode(GlobalVar.MODE);
+    auto_print_chord();
     MIDICtrl.init();
     //ABCJS.renderAbc("paper", "X:1\nK:C\n D8|\n", {staffwidth: 80,});
+}
+
+function BPMbtnClick(n) {
+    let bpm = parseInt(document.getElementById('bpm').value);
+    document.getElementById('bpm').value = bpm+n>=0?bpm+n:0;
 }
 
 </script>
@@ -395,8 +354,10 @@ window.onload = () => {
     /* transform: translateX(-50%); */
 }
 #txts {
-    padding-top: 10vmin;
-    margin-left: 5vw;
+    /* padding-top: 10vmin; */
+    margin-top: 10vmin;
+    margin-left:35vw;
+    width: 37vw;
     /* position:absolute;
     top: 50%;
     left: 50%;
@@ -407,11 +368,12 @@ window.onload = () => {
     right:5vw;
     top: 40%;
     transform: translateY(-50%);
-    font-size:10vmin;
+    font-size:8vmin;
 }
 .top_right_btns {
     position:absolute;
     right:0;
+    top:0;
 }
 </style>
 </head>
@@ -422,7 +384,7 @@ window.onload = () => {
     <div style="position:absolute;left:0;top:0;" id="version"></div>
     <div style="position:absolute;left:0;top:20px;" id="debug"></div>
     <div class="top_right_btns">
-        <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearInterval(GlobalVar.timerid);"
+        <button type="button" id="setting_btn" class="btn btn-primary" style="float:right" onclick="clearInterval(GlobalVar.timerid);clearTimeout(GlobalVar.timerid);"
             data-bs-toggle="offcanvas" data-bs-target="#offcanvasTop" aria-controls="offcanvasTop">
             <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-gear-fill" viewBox="0 0 16 16">
                 <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
@@ -448,25 +410,21 @@ window.onload = () => {
         </div>
         <div id="setting" class="offcanvas-body">
             <div class="input-group mb-3">
-                <span class="input-group-text">MIDICtrl In</span>
+                <span class="input-group-text">MIDI In</span>
                 <select id="selectmidiin" class="form-select"></select>
-                <span class="input-group-text">MIDICtrl Out</span>
+                <span class="input-group-text">MIDI Out</span>
                 <select id="selectmidiout" class="form-select"></select>
             </div>
             <hr />
             <div class="input-group mb-3">
-                <span class="input-group-text" id="basic-addon1">모드</span>
-                
-                <select class="form-select" id="mode-select" name="mode">
-                    <option value="0">자동재생</option>
-                    <option value="1" selected>맞추기</option>
-                </select>
-                <span class="input-group-text" id="basic-addon1">BPM</span>
-                <input type="text" id="bpm" class="form-control" placeholder="0 : 수동" aria-label="Username" aria-describedby="basic-addon1" value="0">
-                <span class="input-group-text" id="basic-addon2">Volume</span>
+                <span class="input-group-text col-2">BPM</span>
+                <input type="text" id="bpm" class="form-control col" placeholder="0 : 제한없음" value="0">
+                <button class="btn btn-outline-secondary" type="button" onclick="BPMbtnClick(parseInt(this.innerText));">-5</button>
+                <button class="btn btn-outline-secondary" type="button" onclick="BPMbtnClick(parseInt(this.innerText));">+5</button>
+                <span class="input-group-text col-2">Volume</span>
                 <!--<input type="text" id="volume" class="form-control" placeholder="0 ~ 100" aria-label="Username" aria-describedby="basic-addon1" value="50">-->
-                <span class="input-group-text" id="basic-addon3" style="background-color: white;">
-                    <input type="range" id="volume" min="0" max="100" style="margin-left:5px;">
+                <span class="input-group-text col" style="background-color: white;">
+                    <input type="range" id="volume" min="0" max="100" style="margin:auto;">
                 </span>
             </div>
             <hr />
@@ -480,21 +438,22 @@ window.onload = () => {
             
         </div>
     </div>
-    <div id="txts">
-        <div id="chord" style="margin-left:35vw;font-size:14vmin;text-align:left">
-            &nbsp;
+    <div class="card" id="txts">
+        <div class="card-header">
+            <div id="chord" style="font-size:14vmin;text-align:center">
+                &nbsp;
+            </div>
+            <div id="chord_inversion" class="mb-1" style="font-size:8vmin;text-align:center">
+                &nbsp;
+            </div>
         </div>
-        <div id="chord_inversion" style="margin-left:35vw;font-size:10vmin;text-align:left">
-            &nbsp;
-        </div>
-        <!-- <div id="chordtone" class="mb-3" style="font-size:6vmin;text-align:center">
-            &nbsp;
-        </div> -->
-        <div id="chordtone" style="margin-left:35vw;font-size:6vmin;text-align:left">
-            &nbsp;
-        </div>
-        <div id="time" style="margin-left:35vw;font-size:6vmin;text-align:left">
-            &nbsp;
+        <div class="card-body">
+          <div id="chordtone" style="font-size:6vmin;text-align:center">
+              &nbsp;
+          </div>
+          <div id="time" style="font-size:6vmin;text-align:center">
+              &nbsp;
+          </div>
         </div>
     </div>
     <b><div id="next_chord"> &nbsp; </div></b>

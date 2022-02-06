@@ -95,14 +95,12 @@ class MIDICtrl {
             if (is_correct() && GlobalVar.next_chord_term == false) {
                 clearInterval(GlobalVar.timerid);
                 GlobalVar.next_chord_term = true;
-                document.getElementById("chord").style.color = "blue";
-                document.getElementById("time").style.color = "blue";
+                document.getElementById("txts").classList.add("text-white");
+                document.getElementById("txts").classList.add("bg-success");
                 setTimeout(
                     function(){
                         //print_chord(PlayingChordList.next());
                         auto_print_chord();
-                        document.getElementById("chord").style.color = "";
-                        document.getElementById("time").style.color = "";
                         GlobalVar.next_chord_term = false;
                     }
                     , 1000

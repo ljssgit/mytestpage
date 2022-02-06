@@ -44,7 +44,7 @@ class Note {
 class Chord {
     static nm_list = ["note", "chordtone", "tension", "inversion"];
     static chordtones = ["", "add2", "7", "m7", "M7", "7sus4", "mM7", "dim7", "6", "m6", "m7(b5)"];
-    static tensions = ["", "b9", "9", "#9", "b11", "11", "#11", "b13", "13", "#13"];
+    static tensions = ["", "b9", "9", "#9", "11", "#11", "b13", "13"];
     static inversions = ["", "전위"];
 
     constructor() {}
@@ -194,6 +194,10 @@ class PlayingChordList {
 
     static setIdx(i) {
         this.cur_idx = i;
+    }
+
+    static cur() {
+        return this.chords[this.cur_idx];
     }
 
     static next() {
