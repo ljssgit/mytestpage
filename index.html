@@ -130,7 +130,7 @@ function auto_print_chord(isInitChord=false) {
                 let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
                 // MIDICtrl.input.disconnect(MIDICtrl.kbd);
                 await new Promise((resolve, reject)=>{
-                    //MIDICtrl.in_thru.blocked = true;
+                    MIDICtrl.in_thru.blocked = true;
                     resolve();
                 });
                 play_piano(Note.names2nums(ct));
