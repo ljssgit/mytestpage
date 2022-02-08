@@ -44,7 +44,7 @@ function print_chord(chord_text, play_yn) {
     document.getElementById("chordtone").innerHTML = cdtone_txts.join(", ");
     //Piano.clear_piano();
     
-    if(MIDICtrl.kbd) MIDICtrl.kbd.send(JZZ.MIDI.allNotesOff(0));
+    // if(MIDICtrl.kbd) MIDICtrl.kbd.send(JZZ.MIDI.allNotesOff(0));
     // 피아노 재생
     if (play_yn) play_piano(cdtone_txts);
     
