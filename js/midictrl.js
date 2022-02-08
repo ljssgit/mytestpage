@@ -37,10 +37,10 @@ class MIDICtrl {
         }
 
         let in_thru = JZZ.Widget({ _receive: function(msg) {
-            if(!this.blocked) this.emit(msg);
-            else this.emit(JZZ.MIDI.active());
+            // if(!this.blocked) this.emit(msg);
+            // else this.emit(JZZ.MIDI.active());
+            this.emit(msg);
         }})
-        in_thru.blocked = false;
 
         let key_sizes = getKeySizes();
         let kbd = await JZZ.input.Kbd({at:'piano', from:'A1', to:'C9',//from:'A0', to:'C8',

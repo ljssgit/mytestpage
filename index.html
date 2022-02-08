@@ -20,7 +20,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 1.12;
+VERSION = 1.13;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -91,7 +91,6 @@ function auto_print_chord(isInitChord=false) {
     document.getElementById("txts").classList.remove("bg-danger");
     document.getElementById("txts").classList.remove("bg-success");
     GlobalVar.next_chord_term = false;
-    if(MIDICtrl.in_thru) MIDICtrl.in_thru.blocked = false;
 
     if (isInitChord) {
         let ids = get_checked_ids();
@@ -112,10 +111,6 @@ function auto_print_chord(isInitChord=false) {
     let play_yn = false;//(GlobalVar.MODE == 0);
     print_chord(chord, play_yn);
 
-    let next_chord = PlayingChordList.next();
-    document.getElementById("next_chord").innerText = next_chord;
-    PlayingChordList.prev();
-
     // 시간 counting
     clearInterval(GlobalVar.timerid);
     let start_time = Date.now();
@@ -134,20 +129,19 @@ function auto_print_chord(isInitChord=false) {
                 let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
                 // MIDICtrl.input.disconnect(MIDICtrl.kbd);
                 await new Promise((resolve, reject)=>{
-                    // MIDICtrl.in_thru.blocked = true;
                     MIDICtrl.input.disconnect(MIDICtrl.in_thru);
                     JZZ().openMidiIn("None").and(function() {this.connect(MIDICtrl.in_thru)});
                     resolve();
                 });
-                // document.getElementById("debug").innerHTML = MIDICtrl.in_thru.blocked.toString();
-                // MIDICtrl.in_thru.blocked = true;
                 play_piano(Note.names2nums(ct));
                 if(MIDICtrl.input.name() != "None") PlayingChordList.chords.push(PlayingChordList.cur());
                 GlobalVar.timerid = setTimeout(
-                    function(){
+                    async function(){
                         //print_chord(PlayingChordList.next());
+                        let defaultMIDI = await JZZ().openMidiIn("None");
+                        await defaultMIDI.disconnect(MIDICtrl.in_thru);
+                        MIDICtrl.input.connect(MIDICtrl.kbd);
                         auto_print_chord();
-                        // MIDICtrl.input.connect(MIDICtrl.kbd);
                     }
                     , 3000
                 );
@@ -374,13 +368,6 @@ function BPMbtnClick(n) {
     left: 50%;
     transform: translate(-50%, -50%); */
 }
-#next_chord {
-    position:absolute;
-    right:5vw;
-    top: 40%;
-    transform: translateY(-50%);
-    font-size:8vmin;
-}
 .top_right_btns {
     position:absolute;
     right:0;
@@ -467,7 +454,6 @@ function BPMbtnClick(n) {
           </div>
         </div>
     </div>
-    <b><div id="next_chord"> &nbsp; </div></b>
     <br/>
     <div id="piano"></div>
 </body>
