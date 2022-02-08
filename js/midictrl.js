@@ -91,7 +91,14 @@ class MIDICtrl {
         let thru = await JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
             console.log(msg.toString());
-            if (msg.toString().search("Active Sensing") == -1) document.getElementById("debug").innerHTML = msg.toString();
+            if (msg.toString().indexOf("Active Sensing") == -1) {
+                let text = document.getElementById("debug").innerHTML;
+                if(text.split("<br>").length-1 > 10) {
+                    text = text.split("<br>").slice(1).join("<br>");
+                    document.getElementById("debug").innerHTML = text;
+                }
+                document.getElementById("debug").innerHTML += msg.toString()+"<br>";
+            }
             MIDICtrl.render(MIDICtrl.playing_notes());
             if (is_correct() && GlobalVar.next_chord_term == false) {
                 clearInterval(GlobalVar.timerid);
