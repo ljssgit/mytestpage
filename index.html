@@ -20,7 +20,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 1.11;
+VERSION = 1.12;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -65,7 +65,7 @@ function get_inversion_settings() {
 
 function play_piano(cdtone) {
     let oct = 4;
-    // MIDICtrl.kbd.send(JZZ.MIDI.allNotesOff(0));
+    MIDICtrl.kbd.send(JZZ.MIDI.allNotesOff(0));
     for (let i in cdtone) {
         if ((i==0 && cdtone[i] < Note.name2num("F")) || (i>0 && cdtone[i]<cdtone[i-1])) oct++;
 
@@ -133,8 +133,13 @@ function auto_print_chord(isInitChord=false) {
                 document.getElementById("txts").classList.add("bg-danger");
                 let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
                 // MIDICtrl.input.disconnect(MIDICtrl.kbd);
-                await new Promise((resolve, reject)=>{MIDICtrl.in_thru.blocked = true;resolve();});
-                document.getElementById("debug").innerHTML = MIDICtrl.in_thru.blocked.toString();
+                await new Promise((resolve, reject)=>{
+                    // MIDICtrl.in_thru.blocked = true;
+                    MIDICtrl.input.disconnect(MIDICtrl.in_thru);
+                    JZZ().openMidiIn("None").and(function() {this.connect(MIDICtrl.in_thru)});
+                    resolve();
+                });
+                // document.getElementById("debug").innerHTML = MIDICtrl.in_thru.blocked.toString();
                 // MIDICtrl.in_thru.blocked = true;
                 play_piano(Note.names2nums(ct));
                 if(MIDICtrl.input.name() != "None") PlayingChordList.chords.push(PlayingChordList.cur());
@@ -305,7 +310,7 @@ function change_setting() {
     MIDICtrl.output.send(msgs[0]);
     MIDICtrl.output.send(msgs[1]);
 
-    auto_print_chord();
+    auto_print_chord(true);
 }
 
 window.onload = () => {
