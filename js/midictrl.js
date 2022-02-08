@@ -91,7 +91,7 @@ class MIDICtrl {
         let thru = await JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
             console.log(msg.toString());
-            if (msg.toString().indexOf("Active Sensing") == -1) {
+            if (msg.toString().indexOf("Active Sensing") == -1 || true) {
                 let text = document.getElementById("debug").innerHTML;
                 if(text.split("<br>").length-1 > 10) {
                     text = text.split("<br>").slice(1).join("<br>");
