@@ -37,10 +37,10 @@ class MIDICtrl {
         }
 
         let in_thru = JZZ.Widget({ _receive: function(msg) {
-            // if(!this.blocked) this.emit(msg);
-            // else this.emit(JZZ.MIDI.active());
-            this.emit(msg);
+            if(!this.blocked) this.emit(msg);
+            else this.emit(JZZ.MIDI.active());
         }})
+        in_thru.blocked = false;
 
         let key_sizes = getKeySizes();
         let kbd = await JZZ.input.Kbd({at:'piano', from:'A1', to:'C9',//from:'A0', to:'C8',
@@ -90,7 +90,8 @@ class MIDICtrl {
 
         let thru = await JZZ.Widget({ _receive: function(msg) {
             this.emit(msg);
-            // console.log(msg.toString());
+            console.log(msg.toString());
+            if (msg.toString().search("Active Sensing") == -1) document.getElementById("debug").innerHTML = msg.toString();
             MIDICtrl.render(MIDICtrl.playing_notes());
             if (is_correct() && GlobalVar.next_chord_term == false) {
                 clearInterval(GlobalVar.timerid);

@@ -20,7 +20,7 @@
 <script src="./js/class.js"></script>
 <script src="./js/midictrl.js"></script>
 <script>
-VERSION = 1.13;
+VERSION = 1.14;
 
 function print_chord(chord_text, play_yn) {
     document.getElementById("chord").innerHTML = "<b>" + chord_text + "</b>";
@@ -91,6 +91,7 @@ function auto_print_chord(isInitChord=false) {
     document.getElementById("txts").classList.remove("bg-danger");
     document.getElementById("txts").classList.remove("bg-success");
     GlobalVar.next_chord_term = false;
+    if(MIDICtrl.in_thru) MIDICtrl.in_thru.blocked=false;
 
     if (isInitChord) {
         let ids = get_checked_ids();
@@ -129,8 +130,7 @@ function auto_print_chord(isInitChord=false) {
                 let ct = document.getElementById("chordtone").innerText.split(/[\s,]+/);
                 // MIDICtrl.input.disconnect(MIDICtrl.kbd);
                 await new Promise((resolve, reject)=>{
-                    MIDICtrl.input.disconnect(MIDICtrl.in_thru);
-                    JZZ().openMidiIn("None").and(function() {this.connect(MIDICtrl.in_thru)});
+                    MIDICtrl.in_thru.blocked = true;
                     resolve();
                 });
                 play_piano(Note.names2nums(ct));
@@ -138,9 +138,6 @@ function auto_print_chord(isInitChord=false) {
                 GlobalVar.timerid = setTimeout(
                     async function(){
                         //print_chord(PlayingChordList.next());
-                        let defaultMIDI = await JZZ().openMidiIn("None");
-                        await defaultMIDI.disconnect(MIDICtrl.in_thru);
-                        MIDICtrl.input.connect(MIDICtrl.kbd);
                         auto_print_chord();
                     }
                     , 3000
