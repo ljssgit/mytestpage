@@ -43,7 +43,7 @@ class Note {
 
 class Chord {
     static nm_list = ["note", "chordtone", "tension", "inversion"];
-    static chordtones = ["", "m", "dim", "sus4", "add2", "7", "m7", "M7", "7sus4", "mM7", "dim7", "6", "m6", "m7(b5)"];
+    static chordtones = ["", "m", "dim", "sus4", "add2", "7", "m7", "M7", "7sus4", "9sus4", "mM7", "dim7", "6", "m6", "m7(b5)"];
     static tensions = ["", "b9", "9", "#9", "11", "#11", "b13", "13"];
     static inversions = ["", "전위"];
 
@@ -75,7 +75,7 @@ class Chord {
                 // if      (add_name == ""         )   result = result.concat([(num+3)%12, (num+4)%12             ]);   //슬래시코드는?
                 if      (add_name == "m"        )   result = result.concat([(num+3)%12, (num+7)%12             ]);
                 else if (add_name == "dim"      )   result = result.concat([(num+3)%12, (num+6)%12             ]);
-                else if (add_name == "sus2"     )   result = result.concat([(num+2)%12, (num+7)%12             ]);
+                // else if (add_name == "sus2"     )   result = result.concat([(num+2)%12, (num+7)%12             ]);   //필요할때 추가
                 else if (add_name == "sus4"     )   result = result.concat([(num+5)%12, (num+7)%12             ]);
                 else if (add_name == "add2"     )   result = result.concat([(num+2)%12, (num+4)%12, (num+ 7)%12]);
                 else if (add_name == "7"        )   result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
