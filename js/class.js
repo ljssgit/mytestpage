@@ -43,7 +43,7 @@ class Note {
 
 class Chord {
     static nm_list = ["note", "chordtone", "tension", "inversion"];
-    static chordtones = ["", "add2", "7", "m7", "M7", "7sus4", "mM7", "dim7", "6", "m6", "m7(b5)"];
+    static chordtones = ["", "m", "dim", "sus4", "add2", "7", "m7", "M7", "7sus4", "mM7", "dim7", "6", "m6", "m7(b5)"];
     static tensions = ["", "b9", "9", "#9", "11", "#11", "b13", "13"];
     static inversions = ["", "전위"];
 
@@ -72,11 +72,17 @@ class Chord {
         for (let i=this.chordtones.length-1;i>=0;i--) {
             let add_name = this.chordtones[i]
             if (chord_nm.indexOf(add_name) > -1) {
-                if      (add_name == "add2"     )   result = result.concat([(num+2)%12, (num+4)%12, (num+ 7)%12]);
+                // if      (add_name == ""         )   result = result.concat([(num+3)%12, (num+4)%12             ]);   //슬래시코드는?
+                if      (add_name == "m"        )   result = result.concat([(num+3)%12, (num+7)%12             ]);
+                else if (add_name == "dim"      )   result = result.concat([(num+3)%12, (num+6)%12             ]);
+                else if (add_name == "sus2"     )   result = result.concat([(num+2)%12, (num+7)%12             ]);
+                else if (add_name == "sus4"     )   result = result.concat([(num+5)%12, (num+7)%12             ]);
+                else if (add_name == "add2"     )   result = result.concat([(num+2)%12, (num+4)%12, (num+ 7)%12]);
                 else if (add_name == "7"        )   result = result.concat([(num+4)%12, (num+7)%12, (num+10)%12]);
                 else if (add_name == "m7"       )   result = result.concat([(num+3)%12, (num+7)%12, (num+10)%12]);
                 else if (add_name == "M7"       )   result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
                 else if (add_name == "7sus4"    )   result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
+                else if (add_name == "9sus4"    )   result = result.concat([(num+2)%12, (num+5)%12, (num+10)%12]);  //5음생략
                 else if (add_name == "mM7"      )   result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
                 else if (add_name == "6"        )   result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
                 else if (add_name == "m6"       )   result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
@@ -87,7 +93,7 @@ class Chord {
         }
         // 코드 한개짜리
         if (result.length < 3) {
-            if(split_nm.length > 1) {
+            if(split_nm.length > 1) {   //슬래시코드
                 if ((num+4)%12 == result[0]) result.push(num, (num+2)%12, (num+7)%12);
                 else if ((num+7)%12 == result[0]) result.push(num, (num+2)%12, (num+4)%12);
                 else result.push((num+4)%12, (num+7)%12);
@@ -144,6 +150,7 @@ class Chord {
         let root_inv = inv_settings.root_inv;
         let root = undefined;
         if (!root_inv && chordtones.length > 3) root = chordtones.splice(0,1);
+        console.log(MIDI.keyToNote[ranges[1]]-MIDI.keyToNote[ranges[0]]);
         if(MIDI.keyToNote[ranges[1]]-MIDI.keyToNote[ranges[0]] < 11) {
             if (num<0) num = (1 + parseInt(Math.random()*(chordtones.length-num-1))) % chordtones.length;
         }
