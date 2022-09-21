@@ -13,11 +13,11 @@ class MIDICtrl {
     static async init() {
         const default_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
         const default_out_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
-        // const inst_name = "Acoustic Grand Piano";
-        // const midijs = JZZ.synth.MIDIjs({ soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/" instrument: "steinway_lite.sf2" })
-        //     .or(function(){ console.log('Cannot load MIDI.js!\n' + this.err()); MIDICtrl.onMidiOutFail; })
-        //     .and(function(){ console.log("MIDIjs Loaded"); });
-        // JZZ.addMidiOut(inst_name, midijs);
+        const inst_name = "Acoustic Grand Piano";
+        const midijs = JZZ.synth.MIDIjs({ soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "steinway_lite.sf2" })
+            .or(function(){ console.log('Cannot load MIDI.js!\n' + this.err()); MIDICtrl.onMidiOutFail; })
+            .and(function(){ console.log("MIDIjs Loaded"); });
+        JZZ.addMidiOut(inst_name, midijs);
 
         //JZZ.synth.MIDIjs.register(inst_name, { soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "acoustic_grand_piano" })
 
@@ -100,20 +100,20 @@ class MIDICtrl {
             //     document.getElementById("debug").innerHTML += msg.toString()+"<br>";
             // }
             MIDICtrl.render(MIDICtrl.playing_notes());
-            if (is_correct() && GlobalVar.next_chord_term == false) {
-                clearInterval(GlobalVar.timerid);
-                GlobalVar.next_chord_term = true;
-                document.getElementById("txts").classList.add("text-white");
-                document.getElementById("txts").classList.add("bg-success");
-                setTimeout(
-                    function(){
-                        //print_chord(PlayingChordList.next());
-                        auto_print_chord();
-                        GlobalVar.next_chord_term = false;
-                    }
-                    , 1000
-                );
-            }
+            // if (is_correct() && GlobalVar.next_chord_term == false) {
+            //     clearInterval(GlobalVar.timerid);
+            //     GlobalVar.next_chord_term = true;
+            //     document.getElementById("txts").classList.add("text-white");
+            //     document.getElementById("txts").classList.add("bg-success");
+            //     setTimeout(
+            //         function(){
+            //             //print_chord(PlayingChordList.next());
+            //             auto_print_chord();
+            //             GlobalVar.next_chord_term = false;
+            //         }
+            //         , 1000
+            //     );
+            // }
         }});
 
         this.input = default_in_midi;
@@ -159,7 +159,6 @@ class MIDICtrl {
             MIDICtrl.changeMidiIn();
         });
 
-        //악보그리기
         //JZZ.addMidiOut('MIDIjs', MIDICtrl.midijs);
         MIDICtrl.render(MIDICtrl.playing_notes());
         console.log(MIDICtrl.playing_notes());
@@ -170,6 +169,18 @@ class MIDICtrl {
                 //MIDICtrl.note_pos = element.
             }
         });
+
+        //드럼
+        const drum_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
+        JZZ.addMidiIn('Drum', default_in_midi);
+
+        // const inst_name = "Acoustic Grand Piano";
+        // const midijs = JZZ.synth.MIDIjs({ soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "steinway_lite.sf2" })
+        //     .or(function(){ console.log('Cannot load MIDI.js!\n' + this.err()); MIDICtrl.onMidiOutFail; })
+        //     .and(function(){ console.log("MIDIjs Loaded"); });
+        // JZZ.addMidiOut(inst_name, midijs);
+
+        // JZZ.synth.MIDIjs.register(inst_name, { soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "acoustic_grand_piano" })
     }
 
     static playing_notes() {
@@ -182,21 +193,6 @@ class MIDICtrl {
     }
     
     static changeMidiIn(idx) {
-        let selectMidiIn = document.getElementById('selectmidiin');
-        if (typeof idx != "number") idx = selectMidiIn.selectedIndex;
-        let name = selectMidiIn.options[idx].value;
-        if (name == MIDICtrl.input.name()) return;
-        if (MIDICtrl.input) MIDICtrl.input.disconnect(MIDICtrl.in_thru);
-        // if (name == 'Virtual_in') {
-        //     if (midiInPort) midiInPort.close();
-        //     midiInPort = piano;
-        //     midiInPort.connect(through);
-        //     midiInName = name;
-        // }
-        JZZ().openMidiIn(name).or(MIDICtrl.onMidiInFail).and(MIDICtrl.onMidiInSuccess);
-    }
-
-    static changeDrum(idx) {
         let selectMidiIn = document.getElementById('selectmidiin');
         if (typeof idx != "number") idx = selectMidiIn.selectedIndex;
         let name = selectMidiIn.options[idx].value;
@@ -268,10 +264,10 @@ class MIDICtrl {
         let lh = "";
         notes.forEach((element) => {
             let key = MIDI.noteToKey[element];
-            if (key.includes("b") && document.getElementById("chordtone").innerText.includes("#")) {
-                key = MIDI.noteToKey[element-1];
-                key = key[0] + "#" + key[1];
-            }
+            // if (key.includes("b") && document.getElementById("chordtone").innerText.includes("#")) {
+            //     key = MIDI.noteToKey[element-1];
+            //     key = key[0] + "#" + key[1];
+            // }
             let oct = parseInt(key[key.length-1]);
             let k = key.substr(0,key.length-1);
             if (k[k.length-1] == "#") k = "^" + k[0];
@@ -287,7 +283,7 @@ class MIDICtrl {
                 rh += k + oct_add_char + " ";
             }
         });
-        let rhs = "[V: PianoRightHand] ";
+        let rhs = "[V: PianoRightHand] ";//\"Em\"";
         let lhs = "[V: PianoLeftHand] ";
         if (rh == "") rhs += "z8|\n"
         else rhs += "[" + rh + "]8|\n";
