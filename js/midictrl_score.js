@@ -14,12 +14,12 @@ class MIDICtrl {
         const default_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
         const default_out_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
         const inst_name = "Acoustic Grand Piano";
-        const midijs = JZZ.synth.MIDIjs({ soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "steinway_lite.sf2" })
-            .or(function(){ console.log('Cannot load MIDI.js!\n' + this.err()); MIDICtrl.onMidiOutFail; })
-            .and(function(){ console.log("MIDIjs Loaded"); });
-        JZZ.addMidiOut(inst_name, midijs);
+        // const midijs = JZZ.synth.MIDIjs({ soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "steinway_lite.sf2" })
+        //     .or(function(){ console.log('Cannot load MIDI.js!\n' + this.err()); MIDICtrl.onMidiOutFail; })
+        //     .and(function(){ console.log("MIDIjs Loaded"); });
+        // JZZ.addMidiOut(inst_name, midijs);
 
-        //JZZ.synth.MIDIjs.register(inst_name, { soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "acoustic_grand_piano" })
+        JZZ.synth.MIDIjs.register(inst_name, { soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/MusyngKite/", instrument: "acoustic_grand_piano" })
 
         const synth_name = "Synth";
         JZZ.synth.Tiny.register(synth_name);
