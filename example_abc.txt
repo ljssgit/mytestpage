@@ -1,0 +1,7 @@
+X:1
+K:C
+%%staves {(PianoRightHand) (PianoLeftHand)}
+V:PianoRightHand clef=treble
+V:PianoLeftHand clef=bass
+[V: PianoRightHand] D8 | c, C'
+[V: PianoLeftHand] D8 | c, C'

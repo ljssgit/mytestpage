@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+<link rel="shortcut icon" href="#">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-input-kbd"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-midi-gm"></script>
+<script src="./import/abcjs-basic-min.js" type="text/javascript"></script>
+<!-- https://www.abcjs.net/abcjs-basic-min.js -->
+<!-- <script src="./import/abcjs-plugin-min.js"></script> -->
+<script src="./import/JZZ.synth.MIDIjs.js"></script>
+<script src="./import/MIDI.js"></script>
+<script src="./settings.js"></script>
+<script src="./js/class.js"></script>
+<!-- <script src="./js/midictrl_score.js"></script> -->
+<script>
+VERSION = 1.16;
+BPM = 70;
+
+function init_setting() {
+
+}
+
+function rand_rhythm_gen(note="B", top=4, bottom=4) {
+    const measure = top * (16/bottom);
+    const note_str = ["/", "1", "2", "3", "4"];
+    const note_beat = [1, 2, 4, 6, 8];
+    let remain_beat = measure;
+    let rhythms = "";
+
+    while(remain_beat > 0) {
+        let rand_idx = parseInt(Math.random()*note_beat.length);
+        let rand_beat = note_beat[rand_idx]+" ";
+
+        if(remain_beat < rand_beat) continue;
+        remain_beat -= rand_beat;
+        rhythms += note + note_str[rand_idx];
+    }
+    
+
+    return rhythms;
+}
+
+function renderABC(id, rh, lh) {
+    let abcstring = "X:1\nM:C\nK:C treble style=rhythm\n%%staves {(PianoRightHand) (PianoLeftHand)}\nV:PianoRightHand clef=treble\nV:PianoLeftHand clef=bass\n";
+    // render_str = "X:1\nK:C\n";
+    // render_str += "z8|";
+    // render_str += rand_note_gen() + "2";
+    // render_str += rand_note_gen() + "2";
+    // render_str += rand_note_gen() + "2";
+    // render_str += rand_note_gen() + "2";
+    // render_str += "|\n";
+    
+    // rh = rand_note_gen() + "2";
+    // lh = rand_note_gen() + "2";
+
+    let rhs = "[V: PianoRightHand] ";
+    let lhs = "[V: PianoLeftHand] ";
+    if (rh == "") rhs += "z8|\n"
+    else rhs += rh + "|\n";//"[" + rh + "]8|\n";
+    if (lh == "") lhs += "z8|\n"
+    else lhs += lh + "|\n"//"[" + lh + "]8|\n";
+    ABCJS.renderAbc(id, abcstring+rhs+lhs, {staffwidth: 200, scale:0.5, responsive: "resize",});
+}
+
+window.onload = () => {
+    v = document.getElementById('version')
+    v.innerHTML = "VERSION : "+VERSION;
+    init_setting();
+    // MIDICtrl.init();
+    //ABCJS.renderAbc("paper", "X:1\nK:C\n D8|\n", {staffwidth: 80,});
+    // ABCJS.renderAbc("paper_gold", "X:1\nK:C\n", {staffwidth: 80,});
+
+    renderABC("paper_gold", rand_rhythm_gen(), "D,2 D,2 D,2 D,2"/*rand_rhythm_gen("D,")*/);
+    renderABC("paper", rand_rhythm_gen(), "D,2 D,2 D,2 D,2"/*rand_rhythm_gen("D,")*/);
+
+    
+    // const default_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
+    // const default_out_midi = JZZ.Widget({ _receive: function(msg) { console.log(msg);this.emit(msg); }});
+    // JZZ.addMidiIn('None', default_in_midi);
+    // JZZ.addMidiOut('None', default_out_midi);
+    // default_in_midi.connect(default_out_midi);
+
+    JZZ.synth.Tiny.register('Synth');
+    document.querySelector('#play_btn').addEventListener('click',function(){
+        // JZZ().openMidiOut().ch(1).program('Taiko Drum').noteOn('C#6')
+        //     .wait(200).noteOff('C#6').ch(9).noteOn('cowbell').wait(200).noteOff('cowbell');
+        
+        console.log("play !");
+        drum_sound = "closed hi-hat";
+        JZZ().or('Cannot start MIDI engine!')
+            .openMidiOut().or('Cannot open MIDI Out port!')
+            .ch(9).or('Cannot open MIDI Out channel!').and("play !")
+            .wait(60000/BPM).noteOn(drum_sound)
+            .wait(60000/BPM).noteOn(drum_sound)
+            .wait(60000/BPM).noteOn(drum_sound)
+            .wait(60000/BPM).noteOn("open hi-hat")
+            .wait(60000/BPM).allNotesOff(0)
+            .and('thank you!');
+    });
+}
+</script>
+
+<style>
+#paperwrap {
+    /* position:absolute; */
+    /* top: 45%; */
+    /* transform: translateY(-50%); */
+    /* width: 30vw; */
+    /* left:10vw; */
+    /* border: 1px solid black; */
+    /* height: 10vmin; */
+}
+#piano {
+    /* display:grid;
+    place-content:center; */
+
+    /* display:flex;
+    justify-content: center;
+    align-items: center; */
+   
+    /* position:absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%); */
+    
+    /* left: 25%; */
+    /* transform: translateX(-50%); */
+}
+.full {
+    width:100%;
+    height:100%;
+}
+</style>
+</head>
+<body>
+    <div style="position:absolute;left:0;top:0;" id="version"></div>
+    <div style="position:absolute;left:0;top:20px;" id="debug"></div>
+    <br/>
+    <div class="container text-center">
+        <div class="row" style="height:10vh;">
+            <button id="play_btn" class="btn btn-primary full">start</button>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button id="left" class="btn btn-warning full"></button>
+            </div>
+            <div class="col">
+                <div id="paperwrap">
+                    <div id="paper_gold"></div>
+                    <div id="paper"></div>
+                </div>
+            </div>
+            <div class="col">
+                <button id="right" class="btn btn-info full"></button>
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>
