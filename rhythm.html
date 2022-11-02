@@ -12,9 +12,10 @@
 <script src="https://cdn.jsdelivr.net/npm/jzz-input-kbd"></script>
 <script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
 <script src="https://cdn.jsdelivr.net/npm/jzz-midi-gm"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/abcjs@VERSION/dist/abcjs-basic-min.js"></script> -->
 <script src="./import/abcjs-basic-min.js" type="text/javascript"></script>
 <!-- https://www.abcjs.net/abcjs-basic-min.js -->
-<!-- <script src="./import/abcjs-plugin-min.js"></script> -->
+<!-- <script src="./import/abcjs-plugin-min.js" type="text/javascript"></script> -->
 <script src="./import/JZZ.synth.MIDIjs.js"></script>
 <script src="./import/MIDI.js"></script>
 <script src="./settings.js"></script>
@@ -23,143 +24,354 @@
 <script>
 VERSION = 1.16;
 BPM = 70;
+DELAY = 170;
+var visualObj_gold;
+var visualObj;
+var drum_sound_on = false;
+var start_time = null;
+var beats = { "left":[], "right":[], "input_left":[], "input_right":[]};
 
 function init_setting() {
 
 }
+function CursorControl(rootSelector) {
+    var self = this;
 
+    // This demonstrates two methods of indicating where the music is.
+    // 1) An element is created that is moved along for each note.
+    // 2) The currently being played note is given a class so that it can be transformed.
+    self.cursor = null; // This is the svg element that will move with the music.
+    self.rootSelector = rootSelector; // This is the same selector as the renderAbc call uses.
+
+    self.onStart = function() {
+        // This is called when the timer starts so we know the svg has been drawn by now.
+        // Create the cursor and add it to the sheet music's svg.
+        var svg = document.querySelector(self.rootSelector + " svg");
+        self.cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        self.cursor.setAttribute("class", "abcjs-cursor");
+        self.cursor.setAttributeNS(null, 'x1', 0);
+        self.cursor.setAttributeNS(null, 'y1', 0);
+        self.cursor.setAttributeNS(null, 'x2', 0);
+        self.cursor.setAttributeNS(null, 'y2', 0);
+        svg.appendChild(self.cursor);
+        start_time = Date.now();
+        beats["input_left"] = [];
+        beats["input_right"] = [];
+    };
+
+    self.removeSelection = function() {
+        // Unselect any previously selected notes.
+        var lastSelection = document.querySelectorAll(self.rootSelector + " .abcjs-highlight");
+        for (var k = 0; k < lastSelection.length; k++)
+            lastSelection[k].classList.remove("abcjs-highlight");
+    };
+
+    self.onEvent = async function(ev) {
+        // This is called every time a note or a rest is reached and contains the coordinates of it.
+        if (ev.measureStart && ev.left === null)
+            return; // this was the second part of a tie across a measure line. Just ignore it.
+
+        self.removeSelection();
+
+        jzz_out = await JZZ().or('Cannot start MIDI engine!')
+                    .openMidiOut().or('Cannot open MIDI Out port!')
+                    .ch(9).or('Cannot open MIDI Out channel!');
+
+        // Select the currently selected notes.
+        for (var i = 0; i < ev.elements.length; i++ ) {
+            var note = ev.elements[i];
+            for (var j = 0; j < note.length; j++) {
+                note[j].classList.add("abcjs-highlight");
+
+                if (drum_sound_on) {
+                    if (note[j].firstChild.getAttribute("data-name")=="B") {
+                        jzz_out.noteOn("closed hi-hat")//.and(console.log(Date.now() - start_time));
+                    }
+                    else if (note[j].firstChild.getAttribute("data-name")=="D,") {
+                        jzz_out.noteOn("bass drum 1")//.and(console.log(Date.now() - start_time));
+                    }
+                }
+            }
+        }
+
+        // Move the cursor to the location of the current note.
+        if (self.cursor) {
+            self.cursor.setAttribute("x1", ev.left - 2);
+            self.cursor.setAttribute("x2", ev.left - 2);
+            self.cursor.setAttribute("y1", ev.top);
+            self.cursor.setAttribute("y2", ev.top + ev.height);
+        }
+    };
+    self.onFinished = function() {
+        self.removeSelection();
+        if (self.cursor) {
+            self.cursor.setAttribute("x1", 0);
+            self.cursor.setAttribute("x2", 0);
+            self.cursor.setAttribute("y1", 0);
+            self.cursor.setAttribute("y2", 0);
+        }
+        start_time = null;
+    };
+}
 function rand_rhythm_gen(note="B", top=4, bottom=4) {
+    if (parseInt(Math.random()*2) == 0 || true) {
+        const pre_beats=[
+            ["~", "B3","(B1 ","B2 ","B/)", "B/", "B1"],
+            ["~", "(B1","B/)","B/ ", "z1", "z/", "B1", "B1", "B1", "B1", "B/"],
+            ["~", "(B1","B/)","B/ ", "z1", "B/", "B1", "B1", "B1", "B1", "B/"],
+            ["~", "B1","B/","B/","z2", "z2", "B/", "B/", "B1"],
+            ["~", "B1","B/","B1","B/", "(B1", "B1", "B/", "B/)", "z2"],
+        ];
+        let pre_rand_idx = 4;//parseInt(Math.random()*pre_beats.length);
+        return pre_beats[pre_rand_idx];
+    }
+
     const measure = top * (16/bottom);
     const note_str = ["/", "1", "2", "3", "4"];
     const note_beat = [1, 2, 4, 6, 8];
     let remain_beat = measure;
-    let rhythms = "";
+    let rhythms = [];
 
     while(remain_beat > 0) {
         let rand_idx = parseInt(Math.random()*note_beat.length);
-        let rand_beat = note_beat[rand_idx]+" ";
+        let rand_beat = note_beat[rand_idx];
 
         if(remain_beat < rand_beat) continue;
         remain_beat -= rand_beat;
-        rhythms += note + note_str[rand_idx];
+        rhythms.push(note + note_str[rand_idx]);
     }
-    
 
     return rhythms;
 }
 
 function renderABC(id, rh, lh) {
     let abcstring = "X:1\nM:C\nK:C treble style=rhythm\n%%staves {(PianoRightHand) (PianoLeftHand)}\nV:PianoRightHand clef=treble\nV:PianoLeftHand clef=bass\n";
-    // render_str = "X:1\nK:C\n";
-    // render_str += "z8|";
-    // render_str += rand_note_gen() + "2";
-    // render_str += rand_note_gen() + "2";
-    // render_str += rand_note_gen() + "2";
-    // render_str += rand_note_gen() + "2";
-    // render_str += "|\n";
-    
-    // rh = rand_note_gen() + "2";
-    // lh = rand_note_gen() + "2";
 
     let rhs = "[V: PianoRightHand] ";
     let lhs = "[V: PianoLeftHand] ";
     if (rh == "") rhs += "z8|\n"
-    else rhs += rh + "|\n";//"[" + rh + "]8|\n";
+    else rhs += rh + "|\n";
     if (lh == "") lhs += "z8|\n"
-    else lhs += lh + "|\n"//"[" + lh + "]8|\n";
-    ABCJS.renderAbc(id, abcstring+rhs+lhs, {staffwidth: 200, scale:0.5, responsive: "resize",});
+    else lhs += lh + "|\n"
+    return ABCJS.renderAbc(id, abcstring+rhs+lhs, {staffwidth: 200, scale:0.5, responsive: "resize",});
+}
+
+async function play_metronom() {
+    let drum_sound = "closed hi-hat";
+    await JZZ().or('Cannot start MIDI engine!')
+        .openMidiOut().or('Cannot open MIDI Out port!')
+        .ch(9).or('Cannot open MIDI Out channel!').and("play !")
+        .wait(60000/BPM).noteOn(drum_sound)
+        .wait(60000/BPM).noteOn(drum_sound)
+        .wait(60000/BPM).noteOn(drum_sound)
+        .wait(60000/BPM).noteOn("open hi-hat")
+        .wait(60000/BPM).allNotesOff(0)
+        .and('thank you!');
+}
+
+function rythm_change() {
+    let right_rhythm = rand_rhythm_gen();
+    let left_rhythm = ["D,2", "D,2", "D,2", "D,2"];
+
+    const note_str = ["/", "1", "2", "3", "4"];
+    const note_beat = [1, 2, 4, 6, 8];
+    beats["left"] = [];
+    for(let i=0;i<left_rhythm.length;i++) {
+        let last_str = left_rhythm[i][left_rhythm[i].length-1];
+        let idx = note_str.indexOf(last_str);
+        beats["left"].push(note_beat[idx]);
+    }
+    beats["right"] = [];
+    for(let i=0;i<right_rhythm.length;i++) {
+        let last_str = right_rhythm[i][right_rhythm[i].length-1];
+        let idx = note_str.indexOf(last_str);
+        beats["right"].push(note_beat[idx]);
+    }
+
+    visualObj_gold = renderABC("paper_gold", right_rhythm.join(""), left_rhythm.join("")/*rand_rhythm_gen("D,")*/);
+    visualObj = renderABC("paper", "", "");
 }
 
 window.onload = () => {
     v = document.getElementById('version')
-    v.innerHTML = "VERSION : "+VERSION;
+    v.innerHTML = "Ver : "+VERSION;
     init_setting();
-    // MIDICtrl.init();
-    //ABCJS.renderAbc("paper", "X:1\nK:C\n D8|\n", {staffwidth: 80,});
-    // ABCJS.renderAbc("paper_gold", "X:1\nK:C\n", {staffwidth: 80,});
 
-    renderABC("paper_gold", rand_rhythm_gen(), "D,2 D,2 D,2 D,2"/*rand_rhythm_gen("D,")*/);
-    renderABC("paper", rand_rhythm_gen(), "D,2 D,2 D,2 D,2"/*rand_rhythm_gen("D,")*/);
-
-    
-    // const default_in_midi = JZZ.Widget({ _receive: function(msg) { this.emit(msg); }});
-    // const default_out_midi = JZZ.Widget({ _receive: function(msg) { console.log(msg);this.emit(msg); }});
-    // JZZ.addMidiIn('None', default_in_midi);
-    // JZZ.addMidiOut('None', default_out_midi);
-    // default_in_midi.connect(default_out_midi);
+    rythm_change();
 
     JZZ.synth.Tiny.register('Synth');
-    document.querySelector('#play_btn').addEventListener('click',function(){
+    document.querySelector('#play_gold_btn').addEventListener('click',async function() {
+        // JZZ().openMidiOut().ch(1).program('Taiko Drum').noteOn('C#6')
+        //     .wait(200).noteOff('C#6').ch(9).noteOn('cowbell').wait(200).noteOff('cowbell');
+        drum_sound_on = true;
+        await play_metronom();
+
+        var cursorControl = new CursorControl("#paper_gold");
+
+        cursorControl.onStart();
+        var timingCallbacks = new ABCJS.TimingCallbacks(visualObj_gold[0], {
+            eventCallback: function(ev) {
+                if (ev) cursorControl.onEvent(ev);
+                else    cursorControl.onFinished();
+            },
+            qpm: BPM,
+        });
+        timingCallbacks.start();
+    });
+    document.querySelector('#play_btn').addEventListener('click',async function(){
         // JZZ().openMidiOut().ch(1).program('Taiko Drum').noteOn('C#6')
         //     .wait(200).noteOff('C#6').ch(9).noteOn('cowbell').wait(200).noteOff('cowbell');
         
-        console.log("play !");
-        drum_sound = "closed hi-hat";
+        drum_sound_on = false;
+        await play_metronom();
+
+        var cursorControl = new CursorControl("#paper_gold");
+
+        cursorControl.onStart();
+        var timingCallbacks = new ABCJS.TimingCallbacks(visualObj_gold[0], {
+            eventCallback: function(ev) {
+                if (ev) cursorControl.onEvent(ev);
+                else    cursorControl.onFinished();
+            },
+            qpm: BPM,
+        });
+        timingCallbacks.start();
+    });
+    document.querySelector('#next_btn').addEventListener('click', rythm_change);
+    document.querySelector('#left').addEventListener('click',function(){
         JZZ().or('Cannot start MIDI engine!')
             .openMidiOut().or('Cannot open MIDI Out port!')
-            .ch(9).or('Cannot open MIDI Out channel!').and("play !")
-            .wait(60000/BPM).noteOn(drum_sound)
-            .wait(60000/BPM).noteOn(drum_sound)
-            .wait(60000/BPM).noteOn(drum_sound)
-            .wait(60000/BPM).noteOn("open hi-hat")
-            .wait(60000/BPM).allNotesOff(0)
-            .and('thank you!');
+            .ch(9).or('Cannot open MIDI Out channel!')
+            .noteOn("bass drum 1");
+        beats_correct("left");
+    });
+    document.querySelector('#right').addEventListener('click',function(){
+        JZZ().or('Cannot start MIDI engine!')
+            .openMidiOut().or('Cannot open MIDI Out port!')
+            .ch(9).or('Cannot open MIDI Out channel!')
+            .noteOn("closed hi-hat");
+        beats_correct("right");
+    });
+    document.querySelector('#delay').addEventListener('change',function(){
+        if(this.value == "") DELAY = 170;
+        else DELAY = parseInt(this.value);
+    });
+    document.querySelector('#bpm').addEventListener('change',function(){
+        if(this.value == "") BPM = 70;
+        else BPM = parseInt(this.value);
     });
 }
+
+function beats_correct(direction="left") {
+    if (start_time == null) return;
+    stime = Date.now() - start_time;
+    timing = 0;
+    gold_time = (60000/BPM)/8;
+    // for(let i=0;i<beats.left.length;i++) {
+    //     console.log(timing);
+    //     timing += beats.left[i]*gold_time*2;
+    // }
+    // console.log(stime, timing, (60000/BPM)*4, gold_time);
+
+    for(let i=0;i<beats[direction].length;i++) {
+        if (stime <= timing+gold_time+DELAY && stime >= timing-gold_time+DELAY) {
+            console.log(direction + " correct");
+            break;
+        }
+        timing += beats[direction][i]*gold_time*2;
+    }
+    beats["input_"+direction].push(stime);
+    
+    if (direction=="left") {
+        left_arr = beats2arr(beats["input_"+direction], "left");
+        right_arr = beats2arr(beats["input_right"], "right");
+    }
+    else {
+        left_arr = beats2arr(beats["input_left"], "left");
+        right_arr = beats2arr(beats["input_"+direction], "right");
+    }
+    console.log(right_arr.join(""));
+    console.log(left_arr.join(""));
+    visualObj = renderABC("paper", right_arr.join(""), left_arr.join(""));
+    console.log(beat_arr);
+}
+
+function beats2arr(in_beats, direction="left") {
+    const note_str = ["/", "1", "2", "3", "4"];
+    const note_beat = [1, 2, 4, 6, 8];
+    beat_arr = [];
+    for(let i=1;i<in_beats.length;i++) {
+        note = "B";
+        if (direction == "left") note="D,";
+
+        gap = in_beats[i]-in_beats[i-1];
+        num = Math.round(gap/((60000/BPM)/4));
+        addstr = "";
+        if (num > 1 && num%2==1) {
+            beat_arr.push("(" + note + "/");
+            addstr = ")";
+            num--;
+        }
+        idx = note_beat.indexOf(num);
+
+        beat_arr.push(note + note_str[idx] + addstr);
+    }
+
+    return beat_arr;
+}
+
 </script>
 
 <style>
-#paperwrap {
-    /* position:absolute; */
-    /* top: 45%; */
-    /* transform: translateY(-50%); */
-    /* width: 30vw; */
-    /* left:10vw; */
-    /* border: 1px solid black; */
-    /* height: 10vmin; */
-}
-#piano {
-    /* display:grid;
-    place-content:center; */
-
-    /* display:flex;
-    justify-content: center;
-    align-items: center; */
-   
-    /* position:absolute;
-    left: 50%;
-    bottom: 0;
-    transform: translateX(-50%); */
-    
-    /* left: 25%; */
-    /* transform: translateX(-50%); */
-}
+/* html,
+body {
+    width: 100%;
+    height: 100%;
+} */
 .full {
     width:100%;
     height:100%;
 }
+.abcjs-highlight {
+fill: #0a9ecc;
+}
+.abcjs-cursor {
+stroke: red;
+}
 </style>
 </head>
 <body>
-    <div style="position:absolute;left:0;top:0;" id="version"></div>
-    <div style="position:absolute;left:0;top:20px;" id="debug"></div>
-    <br/>
-    <div class="container text-center">
-        <div class="row" style="height:10vh;">
-            <button id="play_btn" class="btn btn-primary full">start</button>
+    <div class="full">
+        <div style="position:absolute;left:0;top:0;" id="version"></div>
+        <div style="position:absolute;left:0;top:20px;" id="debug">
+            <input type="number" class="form-control" style="width:60px;" id="delay" placeholder="170">
+            <input type="number" class="form-control" style="width:60px;" id="bpm" placeholder="70">
         </div>
-        <div class="row">
-            <div class="col">
-                <button id="left" class="btn btn-warning full"></button>
-            </div>
-            <div class="col">
-                <div id="paperwrap">
-                    <div id="paper_gold"></div>
-                    <div id="paper"></div>
+        <div class="container text-center">
+            <div class="row" style="height:10vh;">
+                <div class="col">
+                    <button id="play_gold_btn" class="btn btn-success full">gold play</button>
+                </div>
+                <div class="col">
+                    <button id="play_btn" class="btn btn-primary full">start</button>
+                </div>
+                <div class="col">
+                    <button id="next_btn" class="btn btn-secondary full">next</button>
                 </div>
             </div>
-            <div class="col">
-                <button id="right" class="btn btn-info full"></button>
+            <div class="row">
+                <div class="col">
+                    <button id="left" class="btn btn-warning full"></button>
+                </div>
+                <div class="col">
+                    <div id="paperwrap">
+                        <div id="paper_gold"></div>
+                        <div id="paper"></div>
+                    </div>
+                </div>
+                <div class="col">
+                    <button id="right" class="btn btn-info full"></button>
+                </div>
             </div>
         </div>
     </div>
