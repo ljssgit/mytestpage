@@ -22,7 +22,7 @@
 <script src="./js/class.js"></script>
 <!-- <script src="./js/midictrl_score.js"></script> -->
 <script>
-VERSION = 0.02;
+VERSION = 0.03;
 BPM = 70;
 DELAY = 170;
 let visualObj_gold;
@@ -212,7 +212,7 @@ function rhythm_change() {
         let direction = directions[ri];
         for(let i=0;i<rhythm.length;i++) {
             if (rhythm[i][0]=="~" || rhythm[i][0]=="z") continue;
-            let last_str = rhythm[i][rhythm[i].length-1];
+            let last_str = (rhythm[i].trim())[rhythm[i].length-1];
 
             if (is_tie) {
                 if(last_str == ")") {
