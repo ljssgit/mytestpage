@@ -22,17 +22,20 @@
 <script src="./js/class.js"></script>
 <!-- <script src="./js/midictrl_score.js"></script> -->
 <script>
-VERSION = 1.16;
+VERSION = 0.01;
 BPM = 70;
 DELAY = 170;
-var visualObj_gold;
-var visualObj;
-var drum_sound_on = false;
-var start_time = null;
-var beats = { "left":[], "right":[], "input_left":[], "input_right":[]};
+let visualObj_gold;
+let visualObj;
+let drum_sound_on = false;
+let start_time = null;
+let beats = { "left":[], "right":[], "input_left":[], "input_right":[]};
+let jzz_out;
 
 function init_setting() {
-
+    jzz_out = JZZ().or('Cannot start MIDI engine!')
+                .openMidiOut().or('Cannot open MIDI Out port!')
+                .ch(9).or('Cannot open MIDI Out channel!');
 }
 function CursorControl(rootSelector) {
     var self = this;
@@ -73,9 +76,9 @@ function CursorControl(rootSelector) {
 
         self.removeSelection();
 
-        jzz_out = await JZZ().or('Cannot start MIDI engine!')
-                    .openMidiOut().or('Cannot open MIDI Out port!')
-                    .ch(9).or('Cannot open MIDI Out channel!');
+        // jzz_out = await JZZ().or('Cannot start MIDI engine!')
+        //             .openMidiOut().or('Cannot open MIDI Out port!')
+        //             .ch(9).or('Cannot open MIDI Out channel!');
 
         // Select the currently selected notes.
         for (var i = 0; i < ev.elements.length; i++ ) {
@@ -158,9 +161,7 @@ function renderABC(id, rh, lh) {
 
 async function play_metronom() {
     let drum_sound = "closed hi-hat";
-    await JZZ().or('Cannot start MIDI engine!')
-        .openMidiOut().or('Cannot open MIDI Out port!')
-        .ch(9).or('Cannot open MIDI Out channel!').and("play !")
+    await jzz_out.and("play !")
         .wait(60000/BPM).noteOn(drum_sound)
         .wait(60000/BPM).noteOn(drum_sound)
         .wait(60000/BPM).noteOn(drum_sound)
@@ -238,18 +239,12 @@ window.onload = () => {
         timingCallbacks.start();
     });
     document.querySelector('#next_btn').addEventListener('click', rythm_change);
-    document.querySelector('#left').addEventListener('click',function(){
-        JZZ().or('Cannot start MIDI engine!')
-            .openMidiOut().or('Cannot open MIDI Out port!')
-            .ch(9).or('Cannot open MIDI Out channel!')
-            .noteOn("bass drum 1");
+    document.querySelector('#left').addEventListener('mousedown',function(){
+        jzz_out.noteOn("bass drum 1");
         beats_correct("left");
     });
-    document.querySelector('#right').addEventListener('click',function(){
-        JZZ().or('Cannot start MIDI engine!')
-            .openMidiOut().or('Cannot open MIDI Out port!')
-            .ch(9).or('Cannot open MIDI Out channel!')
-            .noteOn("closed hi-hat");
+    document.querySelector('#right').addEventListener('mousedown',function(){
+        jzz_out.noteOn("closed hi-hat");
         beats_correct("right");
     });
     document.querySelector('#delay').addEventListener('change',function(){
