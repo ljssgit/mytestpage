@@ -22,7 +22,7 @@
 <script src="./js/class.js"></script>
 <!-- <script src="./js/midictrl_score.js"></script> -->
 <script>
-VERSION = 0.01;
+VERSION = 0.02;
 BPM = 70;
 DELAY = 170;
 let visualObj_gold;
@@ -31,11 +31,23 @@ let drum_sound_on = false;
 let start_time = null;
 let beats = { "left":[], "right":[], "input_left":[], "input_right":[]};
 let jzz_out;
+let is_mobile = false;
 
 function init_setting() {
     jzz_out = JZZ().or('Cannot start MIDI engine!')
                 .openMidiOut().or('Cannot open MIDI Out port!')
                 .ch(9).or('Cannot open MIDI Out channel!');
+
+    // Mobile check
+    var filter = "win16|win32|win64|mac";
+    if(navigator.platform){
+        if(0 > filter.indexOf(navigator.platform.toLowerCase())){
+            is_mobile = true;
+            console.log("Mobile");
+        }else{
+            console.log("PC");
+        }
+    }
 }
 function CursorControl(rootSelector) {
     var self = this;
@@ -239,14 +251,18 @@ window.onload = () => {
         timingCallbacks.start();
     });
     document.querySelector('#next_btn').addEventListener('click', rythm_change);
-    document.querySelector('#left').addEventListener('mousedown',function(){
+
+    if (is_mobile) ev_type = 'touchstart';
+    else ev_type = 'mousedown';
+    document.querySelector('#left').addEventListener(ev_type,function(){
         jzz_out.noteOn("bass drum 1");
         beats_correct("left");
     });
-    document.querySelector('#right').addEventListener('mousedown',function(){
+    document.querySelector('#right').addEventListener(ev_type,function(){
         jzz_out.noteOn("closed hi-hat");
         beats_correct("right");
     });
+
     document.querySelector('#delay').addEventListener('change',function(){
         if(this.value == "") DELAY = 170;
         else DELAY = parseInt(this.value);
