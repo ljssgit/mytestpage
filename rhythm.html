@@ -29,7 +29,11 @@ let visualObj_gold;
 let visualObj;
 let drum_sound_on = false;
 let start_time = null;
-let beats = { "left":[], "right":[], "input_left":[], "input_right":[]};
+let beats = { "left":[], "right":[],
+    "input_left":[], "input_right":[],
+    "left_mask":[], "right_mask":[],
+    "left_cnt":0, "right_cnt":0,
+};
 let jzz_out;
 let is_mobile = false;
 
@@ -99,11 +103,17 @@ function CursorControl(rootSelector) {
                 note[j].classList.add("abcjs-highlight");
 
                 if (drum_sound_on) {
-                    if (note[j].firstChild.getAttribute("data-name")=="B") {
-                        jzz_out.noteOn("closed hi-hat")//.and(console.log(Date.now() - start_time));
-                    }
-                    else if (note[j].firstChild.getAttribute("data-name")=="D,") {
-                        jzz_out.noteOn("bass drum 1")//.and(console.log(Date.now() - start_time));
+                    cn = note[j].childNodes;
+                    for(var k=0;k<cn.length;k++) {
+                        if (beats.left_mask[beats.right_cnt] && cn[k].getAttribute("data-name")=="B") {
+                            jzz_out.noteOn("closed hi-hat")//.and(console.log(Date.now() - start_time));
+                            beats.right_cnt += 1;
+                        }
+                        else if (beats.left_mask[beats.left_cnt] && cn[k].getAttribute("data-name")=="D,") {
+                            //jzz_out.noteOn("bass drum 1")//.and(console.log(Date.now() - start_time));
+                            jzz_out.noteOn("low floor tom");
+                            beats.left_cnt += 1;
+                        }
                     }
                 }
             }
@@ -182,23 +192,47 @@ async function play_metronom() {
         .and('thank you!');
 }
 
-function rythm_change() {
+function rhythm_change() {
     let right_rhythm = rand_rhythm_gen();
     let left_rhythm = ["D,2", "D,2", "D,2", "D,2"];
 
     const note_str = ["/", "1", "2", "3", "4"];
     const note_beat = [1, 2, 4, 6, 8];
+    const rhythms = [left_rhythm, right_rhythm];
+    const directions = ["left", "right"];
+
     beats["left"] = [];
-    for(let i=0;i<left_rhythm.length;i++) {
-        let last_str = left_rhythm[i][left_rhythm[i].length-1];
-        let idx = note_str.indexOf(last_str);
-        beats["left"].push(note_beat[idx]);
-    }
     beats["right"] = [];
-    for(let i=0;i<right_rhythm.length;i++) {
-        let last_str = right_rhythm[i][right_rhythm[i].length-1];
-        let idx = note_str.indexOf(last_str);
-        beats["right"].push(note_beat[idx]);
+    beats["left_mask"] = [];
+    beats["right_mask"] = [];
+
+    for(let ri=0;ri<rhythms.length;ri++) {
+        let is_tie = false;
+        let rhythm = rhythms[ri];
+        let direction = directions[ri];
+        for(let i=0;i<rhythm.length;i++) {
+            if (rhythm[i][0]=="~" || rhythm[i][0]=="z") continue;
+            let last_str = rhythm[i][rhythm[i].length-1];
+
+            if (is_tie) {
+                if(last_str == ")") {
+                    is_tie = false;
+                    last_str = rhythm[i][rhythm[i].length-2];
+                }
+
+                let idx = note_str.indexOf(last_str);
+                console.log(beats[direction][beats[direction].length-1]);
+                beats[direction][beats[direction].length-1] += note_beat[idx];
+                beats[direction+"_mask"].push(false);
+                continue;
+            }
+
+            if(rhythm[i][0] == "(") is_tie = true;
+            let idx = note_str.indexOf(last_str);
+            console.log(note_beat[idx]);
+            beats[direction].push(note_beat[idx]);
+            beats[direction+"_mask"].push(true);
+        }
     }
 
     visualObj_gold = renderABC("paper_gold", right_rhythm.join(""), left_rhythm.join("")/*rand_rhythm_gen("D,")*/);
@@ -210,7 +244,7 @@ window.onload = () => {
     v.innerHTML = "Ver : "+VERSION;
     init_setting();
 
-    rythm_change();
+    rhythm_change();
 
     JZZ.synth.Tiny.register('Synth');
     document.querySelector('#play_gold_btn').addEventListener('click',async function() {
@@ -250,12 +284,13 @@ window.onload = () => {
         });
         timingCallbacks.start();
     });
-    document.querySelector('#next_btn').addEventListener('click', rythm_change);
+    document.querySelector('#next_btn').addEventListener('click', rhythm_change);
 
     if (is_mobile) ev_type = 'touchstart';
     else ev_type = 'mousedown';
     document.querySelector('#left').addEventListener(ev_type,function(){
-        jzz_out.noteOn("bass drum 1");
+        // jzz_out.noteOn("bass drum 1");
+        jzz_out.noteOn("low floor tom");
         beats_correct("left");
     });
     document.querySelector('#right').addEventListener(ev_type,function(){
@@ -294,12 +329,14 @@ function beats_correct(direction="left") {
     beats["input_"+direction].push(stime);
     
     if (direction=="left") {
-        left_arr = beats2arr(beats["input_"+direction], "left");
+        left_arr = beats2arr(beats["input_left"], "left");
+        left_arr.push("D,/");
         right_arr = beats2arr(beats["input_right"], "right");
     }
     else {
         left_arr = beats2arr(beats["input_left"], "left");
-        right_arr = beats2arr(beats["input_"+direction], "right");
+        right_arr = beats2arr(beats["input_right"], "right");
+        left_arr.push("B/");
     }
     console.log(right_arr.join(""));
     console.log(left_arr.join(""));
