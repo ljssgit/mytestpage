@@ -76,6 +76,8 @@ function CursorControl(rootSelector) {
         start_time = Date.now();
         beats["input_left"] = [];
         beats["input_right"] = [];
+        beats["left_cnt"] = 0;
+        beats["right_cnt"] = 0;
     };
 
     self.removeSelection = function() {
