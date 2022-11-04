@@ -25,14 +25,15 @@
 VERSION = 0.04;
 BPM = 70;
 DELAY = 170;
+TOP = 4;
+BOTTOM = 4;
 let visualObj_gold;
 let visualObj;
 let drum_sound_on = false;
 let start_time = null;
-let beats = { "left":[], "right":[],
+let beats = {
+    "left":[], "right":[],
     "input_left":[], "input_right":[],
-    "left_mask":[], "right_mask":[],
-    "left_cnt":0, "right_cnt":0,
 };
 let jzz_out;
 let is_mobile = false;
@@ -104,22 +105,22 @@ function CursorControl(rootSelector) {
             for (var j = 0; j < note.length; j++) {
                 note[j].classList.add("abcjs-highlight");
 
-                if (drum_sound_on) {
-                    cn = note[j].childNodes;
-                    for(var k=0;k<cn.length;k++) {
-                        if (cn[k].getAttribute("data-name")=="B") {
-                            if (beats.right_mask[beats.right_cnt])
-                                jzz_out.noteOn("closed hi-hat")//.and(console.log(Date.now() - start_time));
-                            beats.right_cnt += 1;
-                        }
-                        else if (cn[k].getAttribute("data-name")=="D,") {
-                            if (beats.left_mask[beats.left_cnt])
-//jzz_out.noteOn("bass drum 1")//.and(console.log(Date.now() - start_time));
-                                jzz_out.noteOn("low floor tom");
-                            beats.left_cnt += 1;
-                        }
-                    }
-                }
+                // if (drum_sound_on) {
+                //     cn = note[j].childNodes;
+                //     for(var k=0;k<cn.length;k++) {
+                //         if (cn[k].getAttribute("data-name")=="A") {
+                //             if (beats.right_mask[beats.right_cnt])
+                //                 jzz_out.noteOn("closed hi-hat")//.and(console.log(Date.now() - start_time));
+                //             beats.right_cnt += 1;
+                //         }
+                //         else if (cn[k].getAttribute("data-name")=="C,") {
+                //             if (beats.left_mask[beats.left_cnt])
+                //                 //jzz_out.noteOn("bass drum 1")//.and(console.log(Date.now() - start_time));
+                //                 jzz_out.noteOn("low floor tom");
+                //             beats.left_cnt += 1;
+                //         }
+                //     }
+                // }
             }
         }
 
@@ -142,33 +143,95 @@ function CursorControl(rootSelector) {
         start_time = null;
     };
 }
-function rand_rhythm_gen(note="B", top=4, bottom=4) {
-    if (parseInt(Math.random()*2) == 0) {
-        const pre_beats=[
-            ["~", "B3","(B1 ","B2 ","B/)", "B/", "B1"],
-            ["~", "(B1","B/)","B/ ", "z1", "z/", "B1", "B1", "B1", "B1", "B/"],
-            ["~", "(B1","B/)","B/ ", "z1", "B/", "B1", "B1", "B1", "B1", "B/"],
-            ["~", "B1","B/","B/","z2", "z2", "B/", "B/", "B1"],
-            ["~", "B1","B/","B1","B/", "(B1", "B1", "B/", "B/)", "z2"],
-        ];
-        let pre_rand_idx = parseInt(Math.random()*pre_beats.length);
-        return pre_beats[pre_rand_idx];
-    }
 
-    const measure = top * (16/bottom);
-    const note_str = ["/", "1", "2", "3", "4"];
-    const note_beat = [1, 2, 4, 6, 8];
-    let remain_beat = measure;
+function split_beats(beats_arr, top=TOP, bottom=BOTTOM) {
+    let idx = 0;
+    let sum = 0;
+    let unit = 4;
+    if (top % 4 != 0) unit=3;
+    while (idx < beats_arr.length) {
+        let bef_pos = parseInt(sum/unit);
+        let nlen = note_len(beats_arr[idx]);
+        if (nlen==0) {
+            idx++;
+            continue;
+        }
+
+        sum += nlen;
+        let pos = parseInt(sum/unit);
+        let remain = sum%unit;
+        if (pos > bef_pos && remain > 0 && (sum-nlen) % unit > 0) {
+            note = beats_arr[idx].match(/[a-zA-Z|,]/g).join("");
+            beats_arr.splice(idx, 0, "(", note+(nlen-remain)+"/", " ", note+remain+"/", ")");
+            idx += 4;
+            beats_arr.splice(idx+1, 1);
+        }
+        if (remain==0)
+            beats_arr.splice(++idx, 0, " ");
+        idx++;
+    }
+}
+
+
+function rand_rhythm_gen(note="A", top=TOP, bottom=BOTTOM) {
     let rhythms = [];
 
-    while(remain_beat > 0) {
-        let rand_idx = parseInt(Math.random()*note_beat.length);
-        let rand_beat = note_beat[rand_idx];
+    if (parseInt(Math.random()*2) == 0 || true) {
+        const pre_beats=[
+            // 괄호작업 이전
+            // ["~", "A6/","(A2/ ","A4/ ","A1/)", "A1/", "A2/"],
+            // ["~", "(A3/","A1/)","A1/ ", "z3/", "A2/", "A2/", "A2/", "A2/", "A1/"],
+            // ["~", "(A2/","A1/)","A1/ ", "z2/", "A1/", "A2/", "A2/", "A2/", "A2/", "A1/"],
+            // ["~", "A2/","A1/","A1/","z8/", "A1/", "A1/", "A2/"],
+            // ["~", "A2/","A1/","A2/","A1/", "(A2/", "A2/", "A1/", "A1/)", "z4/"],
 
-        if(remain_beat < rand_beat) continue;
-        remain_beat -= rand_beat;
-        rhythms.push(note + note_str[rand_idx]);
+            // 괄호작업 이후
+            ["~", "A6/","A7/","A1/","A2/"
+                , "\nw: Don't go - to- night"],
+            // ["~", "A3/","A1/","z3/", "A2/", "A2/", "A2/", "A2/", "A1/"
+            ["~", "z4/","z3/", "A2/", "A2/", "A2/", "A2/", "A1/"
+                , "\nw: _ _ St-ay here one - more time"],
+            // ["~", "A3/","A1/","z2/", "A1/", "A2/", "A2/", "A2/", "A2/", "A1/"
+            ["~", "z4/","z2/", "A1/", "A2/", "A2/", "A2/", "A2/", "A1/"
+                , "\nw: _ _ Re mind - me - what - it's like"],
+            ["~", "A2/","A1/","A1/","z8/", "A1/", "A1/", "A2/"
+                , "\nw: _ _ _ - And - let's"],
+            ["~", "A2/","A1/","A2/","A1/", "A5/", "A1/", "z4/"
+                , "\nw: fall - in - - love - -"],
+            ["~", "A2/","A1/","A2/","A1/", "A5/", "A1/", "z3/, A1/"
+                , "\nw: one - more - - time - - I"],
+            ["~", "A2/","A1/","A2/","A1/", "A5/", "A1/", "z4/"
+                , "\nw: need - you - - now - -"],
+            ["~", "A3/","A3/","A6/", "z2/", "A2/"
+                , "\nw: by my - side - It"],
+
+            // 2마디
+            // ["~", "A6/","A7/","A1/","(A2/",
+            // "|", "A3/)","A1/","z3/", "A2/", "A2/", "A2/", "A2/", "A1/"
+            // , "\nw: Don't go - to- night - - Stay - here one - more time"],
+            // ["~", "A2/","A1/","A1/","z2/", "A1/", "A2/", "A2/", "A2/", "A2/", "A1/",
+            // "|", "A2/","A1/","A1/","z8/", "A1/", "A1/", "A2/"],
+            // ["~", "A2/","A1/","A2/","A1/", "A2/", "A2/", "A1/", "A1/", "z4/"],
+        ];
+        let pre_rand_idx = parseInt(Math.random()*pre_beats.length);
+        rhythms = pre_beats[pre_rand_idx];
     }
+    else {
+        const measure = top * (16/bottom);
+        let remain_beat = measure;
+
+        // console.log("measure", measure);
+        while(remain_beat > 0) {
+            let rand_time = parseInt(Math.random()*(measure/2))+1;
+
+            if(remain_beat < rand_time) continue;
+            remain_beat -= rand_time;
+            rhythms.push(note + rand_time + "/");
+        }
+    }
+
+    split_beats(rhythms);
+    console.log(rhythms);
 
     return rhythms;
 }
@@ -182,6 +245,7 @@ function renderABC(id, rh, lh) {
     else rhs += rh + "|\n";
     if (lh == "") lhs += "z8|\n"
     else lhs += lh + "|\n"
+    // rhs += "w: ros si gno let du bois jo li quand il s'a git des a mou reux\n";
     return ABCJS.renderAbc(id, abcstring+rhs+lhs, {staffwidth: 200, scale:0.5, responsive: "resize",});
 }
 
@@ -196,48 +260,56 @@ async function play_metronom() {
         .and('thank you!');
 }
 
+async function play_beats(beat_arr, drum_sound) {
+    for(let i=0;i<beat_arr.length;i++)
+        await jzz_out.noteOn(drum_sound).wait(beat_arr[i]*60000/(BPM*4));
+}
+
+function note_len(note) {
+    // note[note.length-1].match(/[0-9]/g).filter(item => item !== '').join("")
+    // console.log("!",note,"!");
+    let num_str = note.match(/[0-9]/g);
+    if (num_str==null) {
+        let slash = note.match(/\//g);
+        if (slash==null) return 0;
+        else return 1 / Math.pow(2, slash.length-1)
+    }
+    num = parseInt(note.match(/[0-9]/g).join(""));
+    // console.log(note, note.match(/[0-9]/g).join(""), num);
+
+    return num;
+}
+
 function rhythm_change() {
     let right_rhythm = rand_rhythm_gen();
-    let left_rhythm = ['z8'];//["D,2", "D,2", "D,2", "D,2"];
+    let left_rhythm = ["D,4/", "D,4/", "D,4/", "D,4/"];//['z8'];
 
-    const note_str = ["/", "1", "2", "3", "4"];
-    const note_beat = [1, 2, 4, 6, 8];
     const rhythms = [left_rhythm, right_rhythm];
     const directions = ["left", "right"];
 
     beats["left"] = [];
     beats["right"] = [];
-    beats["left_mask"] = [];
-    beats["right_mask"] = [];
 
     for(let ri=0;ri<rhythms.length;ri++) {
         let is_tie = false;
         let rhythm = rhythms[ri];
         let direction = directions[ri];
         for(let i=0;i<rhythm.length;i++) {
-            if (rhythm[i][0]=="~" || rhythm[i][0]=="z") continue;
-            let last_str = (rhythm[i].trim())[rhythm[i].length-1];
-
-            if (is_tie) {
-                if(last_str == ")") {
-                    is_tie = false;
-                    last_str = rhythm[i][rhythm[i].length-2];
-                }
-
-                let idx = note_str.indexOf(last_str);
-                console.log(beats[direction][beats[direction].length-1]);
-                beats[direction][beats[direction].length-1] += note_beat[idx];
-                beats[direction+"_mask"].push(false);
+            rthm = rhythm[i].trim();
+            if (rthm=="(" || rthm==")") {
+                is_tie = (rthm=="(");
                 continue;
             }
-
-            if(rhythm[i][0] == "(") is_tie = true;
-            let idx = note_str.indexOf(last_str);
-            console.log(note_beat[idx]);
-            beats[direction].push(note_beat[idx]);
-            beats[direction+"_mask"].push(true);
+            else if (note_len(rthm)==0) continue;
+            
+            if (is_tie || rthm[0]=="z") {
+                beats[direction][beats[direction].length-1] += note_len(rthm);
+                continue;
+            }
+            beats[direction].push(note_len(rthm));
         }
     }
+    // console.log(beats.right);
 
     visualObj_gold = renderABC("paper_gold", right_rhythm.join(""), left_rhythm.join("")/*rand_rhythm_gen("D,")*/);
     visualObj = renderABC("paper", "", "");
@@ -254,6 +326,7 @@ window.onload = () => {
     document.querySelector('#play_gold_btn').addEventListener('click',async function() {
         // JZZ().openMidiOut().ch(1).program('Taiko Drum').noteOn('C#6')
         //     .wait(200).noteOff('C#6').ch(9).noteOn('cowbell').wait(200).noteOff('cowbell');
+        renderABC("paper", [], []);
         drum_sound_on = true;
         await play_metronom();
 
@@ -268,10 +341,13 @@ window.onload = () => {
             qpm: BPM,
         });
         timingCallbacks.start();
+        play_beats(beats.left, "low floor tom");
+        play_beats(beats.right, "closed hi-hat");
     });
     document.querySelector('#play_btn').addEventListener('click',async function(){
         // JZZ().openMidiOut().ch(1).program('Taiko Drum').noteOn('C#6')
         //     .wait(200).noteOff('C#6').ch(9).noteOn('cowbell').wait(200).noteOff('cowbell');
+        renderABC("paper", [], []);
         
         drum_sound_on = false;
         await play_metronom();
@@ -300,6 +376,17 @@ window.onload = () => {
     document.querySelector('#right').addEventListener(ev_type,function(){
         jzz_out.noteOn("closed hi-hat");
         beats_correct("right");
+    });
+    window.addEventListener("keydown", (e) => {
+        // console.log(e)
+        if (e.code == "ShiftLeft" || e.code == "KeyZ") {
+            jzz_out.noteOn("low floor tom");
+            beats_correct("left");
+        }
+        else if (e.code == "ShiftRight" || e.code == "Slash") {
+            jzz_out.noteOn("closed hi-hat");
+            beats_correct("right");
+        }
     });
 
     document.querySelector('#delay').addEventListener('change',function(){
@@ -332,42 +419,36 @@ function beats_correct(direction="left") {
     }
     beats["input_"+direction].push(stime);
     
-    if (direction=="left") {
-        left_arr = beats2arr(beats["input_left"], "left");
-        left_arr.push("D,/");
-        right_arr = beats2arr(beats["input_right"], "right");
-    }
-    else {
-        left_arr = beats2arr(beats["input_left"], "left");
-        right_arr = beats2arr(beats["input_right"], "right");
-        left_arr.push("B/");
-    }
-    console.log(right_arr.join(""));
-    console.log(left_arr.join(""));
+    left_arr = beats2arr(beats["input_left"], "left");
+    right_arr = beats2arr(beats["input_right"], "right");
+
+    // console.log(right_arr.join(""));
+    // console.log(left_arr.join(""));
     visualObj = renderABC("paper", right_arr.join(""), left_arr.join(""));
-    console.log(beat_arr);
+    // console.log(beat_arr);
 }
 
 function beats2arr(in_beats, direction="left") {
-    const note_str = ["/", "1", "2", "3", "4"];
-    const note_beat = [1, 2, 4, 6, 8];
     beat_arr = [];
-    for(let i=1;i<in_beats.length;i++) {
-        note = "B";
-        if (direction == "left") note="D,";
 
+    if (in_beats.length == 0) return beat_arr;
+
+    let gap = in_beats[0]-DELAY;
+    let num = Math.round(gap/((60000/BPM)/4));
+    if (num > 0) beat_arr.push("z" + num + "/");;
+
+    note = "A";
+    if (direction == "left") note="C,";
+
+    for(let i=1;i<in_beats.length;i++) {
         gap = in_beats[i]-in_beats[i-1];
         num = Math.round(gap/((60000/BPM)/4));
-        addstr = "";
-        if (num > 1 && num%2==1) {
-            beat_arr.push("(" + note + "/");
-            addstr = ")";
-            num--;
-        }
-        idx = note_beat.indexOf(num);
 
-        beat_arr.push(note + note_str[idx] + addstr);
+        beat_arr.push(note + num + "/");
     }
+    beat_arr.push(note + "/");
+
+    split_beats(beat_arr);
 
     return beat_arr;
 }
@@ -404,6 +485,7 @@ stroke: red;
                 <div class="col">
                     <button id="play_gold_btn" class="btn btn-success full">gold play</button>
                 </div>
+                <!-- <div class="col-6"> -->
                 <div class="col">
                     <button id="play_btn" class="btn btn-primary full">start</button>
                 </div>
@@ -416,6 +498,7 @@ stroke: red;
                     <button id="left" class="btn btn-warning full"></button>
                 </div>
                 <div class="col">
+                <!-- <div class="col-6"> -->
                     <div id="paperwrap">
                         <div id="paper_gold"></div>
                         <div id="paper"></div>
