@@ -27,6 +27,7 @@ BPM = 70;
 DELAY = 170;
 TOP = 4;
 BOTTOM = 4;
+let measure = TOP * (16/BOTTOM);
 let visualObj_gold;
 let visualObj;
 let drum_sound_on = false;
@@ -34,6 +35,7 @@ let start_time = null;
 let beats = {
     "left":[], "right":[],
     "input_left":[], "input_right":[],
+    "left_mask":[], "right_mask":[],
 };
 let jzz_out;
 let is_mobile = false;
@@ -151,7 +153,7 @@ function split_beats(beats_arr, top=TOP, bottom=BOTTOM) {
     if (top % 4 != 0) unit=3;
     while (idx < beats_arr.length) {
         let bef_pos = parseInt(sum/unit);
-        let nlen = note_len(beats_arr[idx]);
+        let nlen = Math.abs(note_len(beats_arr[idx]));
         if (nlen==0) {
             idx++;
             continue;
@@ -160,10 +162,13 @@ function split_beats(beats_arr, top=TOP, bottom=BOTTOM) {
         sum += nlen;
         let pos = parseInt(sum/unit);
         let remain = sum%unit;
-        if (pos > bef_pos && remain > 0 && (sum-nlen) % unit > 0) {
-            note = beats_arr[idx].match(/[a-zA-Z|,]/g).join("");
-            beats_arr.splice(idx, 0, "(", note+(nlen-remain)+"/", " ", note+remain+"/", ")");
-            idx += 4;
+        if ((pos > bef_pos && remain > 0) || (pos-bef_pos > 1 && (sum-nlen) % unit > 0)) {
+            let note = beats_arr[idx].match(/[a-zA-Z|,]/g).join("");
+            let l = (bef_pos+1)*unit-(sum-nlen) > 0 ? note+((bef_pos+1)*unit-(sum-nlen))+"/" : "";
+            let m = pos-bef_pos > 1 ? note+((pos-bef_pos-1)*unit)+"/" : "";
+            let r = remain > 0 ? note+remain+"/" : "";
+            beats_arr.splice(idx, 0, "(", l, " ", m, " ", r, ")");
+            idx += 6;
             beats_arr.splice(idx+1, 1);
         }
         if (remain==0)
@@ -186,23 +191,23 @@ function rand_rhythm_gen(note="A", top=TOP, bottom=BOTTOM) {
             // ["~", "A2/","A1/","A2/","A1/", "(A2/", "A2/", "A1/", "A1/)", "z4/"],
 
             // 괄호작업 이후
-            ["~", "A6/","A7/","A1/","A2/"
+            ["~", "A6/","A7/","A1/","A2/", "|"
                 , "\nw: Don't go - to- night"],
             // ["~", "A3/","A1/","z3/", "A2/", "A2/", "A2/", "A2/", "A1/"
-            ["~", "z4/","z3/", "A2/", "A2/", "A2/", "A2/", "A1/"
+            ["~", "z4/","z3/", "A2/", "A2/", "A2/", "A2/", "A1/", "|"
                 , "\nw: _ _ St-ay here one - more time"],
             // ["~", "A3/","A1/","z2/", "A1/", "A2/", "A2/", "A2/", "A2/", "A1/"
-            ["~", "z4/","z2/", "A1/", "A2/", "A2/", "A2/", "A2/", "A1/"
+            ["~", "z4/","z2/", "A1/", "A2/", "A2/", "A2/", "A2/", "A1/", "|"
                 , "\nw: _ _ Re mind - me - what - it's like"],
-            ["~", "A2/","A1/","A1/","z8/", "A1/", "A1/", "A2/"
+            ["~", "A2/","A1/","A1/","z8/", "A1/", "A1/", "A2/", "|"
                 , "\nw: _ _ _ - And - let's"],
-            ["~", "A2/","A1/","A2/","A1/", "A5/", "A1/", "z4/"
+            ["~", "A2/","A1/","A2/","A1/", "A5/", "A1/", "z4/", "|"
                 , "\nw: fall - in - - love - -"],
-            ["~", "A2/","A1/","A2/","A1/", "A5/", "A1/", "z3/, A1/"
+            ["~", "A2/","A1/","A2/","A1/", "A5/", "A1/", "z3/", "A1/", "|"
                 , "\nw: one - more - - time - - I"],
-            ["~", "A2/","A1/","A2/","A1/", "A5/", "A1/", "z4/"
+            ["~", "A2/","A1/","A2/","A1/", "A5/", "A1/", "z4/", "|"
                 , "\nw: need - you - - now - -"],
-            ["~", "A3/","A3/","A6/", "z2/", "A2/"
+            ["~", "A3/","A3/","A6/", "z2/", "A2/", "|"
                 , "\nw: by my - side - It"],
 
             // 2마디
@@ -217,7 +222,7 @@ function rand_rhythm_gen(note="A", top=TOP, bottom=BOTTOM) {
         rhythms = pre_beats[pre_rand_idx];
     }
     else {
-        const measure = top * (16/bottom);
+        measure = TOP * (16/BOTTOM);
         let remain_beat = measure;
 
         // console.log("measure", measure);
@@ -261,8 +266,10 @@ async function play_metronom() {
 }
 
 async function play_beats(beat_arr, drum_sound) {
-    for(let i=0;i<beat_arr.length;i++)
-        await jzz_out.noteOn(drum_sound).wait(beat_arr[i]*60000/(BPM*4));
+    for(let i=0;i<beat_arr.length;i++) {
+        if (beat_arr[i] > 0) jzz_out.noteOn(drum_sound);
+        await jzz_out.wait(Math.abs(beat_arr[i])*60000/(BPM*4));
+    }
 }
 
 function note_len(note) {
@@ -275,6 +282,7 @@ function note_len(note) {
         else return 1 / Math.pow(2, slash.length-1)
     }
     num = parseInt(note.match(/[0-9]/g).join(""));
+    num = note[0] =="z" ? -num : num;
     // console.log(note, note.match(/[0-9]/g).join(""), num);
 
     return num;
@@ -291,22 +299,31 @@ function rhythm_change() {
     beats["right"] = [];
 
     for(let ri=0;ri<rhythms.length;ri++) {
-        let is_tie = false;
+        let tie_flag = 0; // 0:false, 1:true, 2:true(not added)
         let rhythm = rhythms[ri];
         let direction = directions[ri];
         for(let i=0;i<rhythm.length;i++) {
             rthm = rhythm[i].trim();
-            if (rthm=="(" || rthm==")") {
-                is_tie = (rthm=="(");
-                continue;
-            }
-            else if (note_len(rthm)==0) continue;
+            if (rthm=="(") tie_flag = 2;
+            else if(rthm==")") tie_flag = 0;
             
-            if (is_tie || rthm[0]=="z") {
-                beats[direction][beats[direction].length-1] += note_len(rthm);
-                continue;
+            if (note_len(rthm)==0) continue;
+            
+            if (tie_flag==1)  beats[direction][beats[direction].length-1] += note_len(rthm);
+            else beats[direction].push(note_len(rthm));
+
+            if (tie_flag==2) tie_flag = 1;
+        }
+
+        beats[direction+"_mask"] = [];
+        for (let i=0;i<beats[direction].length;i++) {
+            let mask = 2;
+            if (beats[direction][i] < 0) mask = 0;
+
+            for (let idx=0;idx<Math.abs(beats[direction][i]);idx++) {
+                beats[direction+"_mask"].push(mask);
+                if (mask==2) mask=1;
             }
-            beats[direction].push(note_len(rthm));
         }
     }
     // console.log(beats.right);
@@ -366,26 +383,69 @@ window.onload = () => {
     });
     document.querySelector('#next_btn').addEventListener('click', rhythm_change);
 
-    if (is_mobile) ev_type = 'touchstart';
-    else ev_type = 'mousedown';
-    document.querySelector('#left').addEventListener(ev_type,function(){
+    if (is_mobile) {
+        ev_start_type = 'touchstart';
+        ev_end_type = 'touchend';
+    }
+    else {
+        ev_start_type = 'mousedown';
+        ev_end_type = 'mouseup';
+    }
+    document.querySelector('#left').addEventListener(ev_start_type,function(){
         // jzz_out.noteOn("bass drum 1");
+        document.querySelector('#left_sel').setAttribute("class", "btn btn-warning");
         jzz_out.noteOn("low floor tom");
         beats_correct("left");
     });
-    document.querySelector('#right').addEventListener(ev_type,function(){
+    document.querySelector('#right').addEventListener(ev_start_type,function(){
+        document.querySelector('#right_sel').setAttribute("class", "btn btn-info");
         jzz_out.noteOn("closed hi-hat");
         beats_correct("right");
     });
+    document.querySelector('#left').addEventListener(ev_end_type,function(){
+        document.querySelector('#left_sel').setAttribute("class", "btn btn-outline-warning");
+    });
+    document.querySelector('#right').addEventListener(ev_end_type,function(){
+        document.querySelector('#right_sel').setAttribute("class", "btn btn-outline-info");
+    });
     window.addEventListener("keydown", (e) => {
         // console.log(e)
+        if (document.querySelector('#left_sel').getAttribute("class") == 'btn btn-outline-warning'
+        && (e.code == "ShiftLeft" || e.code == "KeyZ")) {
+            let ev = document.createEvent("HTMLEvents");
+            ev.initEvent(ev_start_type, true, false);
+            document.querySelector('#left').dispatchEvent(ev);
+            // document.querySelector('#left').click();
+            // jzz_out.noteOn("low floor tom");
+            // beats_correct("left");
+        }
+        else if (document.querySelector('#right_sel').getAttribute("class") == 'btn btn-outline-info'
+        && (e.code == "ShiftRight" || e.code == "Slash")) {
+            let ev = document.createEvent("HTMLEvents");
+            ev.initEvent(ev_start_type, true, false);
+            document.querySelector('#right').dispatchEvent(ev);
+            // document.querySelector('#right').click();
+            // jzz_out.noteOn("closed hi-hat");
+            // beats_correct("right");
+        }
+    });
+    window.addEventListener("keyup", (e) => {
+        // console.log(e)
         if (e.code == "ShiftLeft" || e.code == "KeyZ") {
-            jzz_out.noteOn("low floor tom");
-            beats_correct("left");
+            let ev = document.createEvent("HTMLEvents");
+            ev.initEvent(ev_end_type, true, false);
+            document.querySelector('#left').dispatchEvent(ev);
+            // document.querySelector('#left').click();
+            // jzz_out.noteOn("low floor tom");
+            // beats_correct("left");
         }
         else if (e.code == "ShiftRight" || e.code == "Slash") {
-            jzz_out.noteOn("closed hi-hat");
-            beats_correct("right");
+            let ev = document.createEvent("HTMLEvents");
+            ev.initEvent(ev_end_type, true, false);
+            document.querySelector('#right').dispatchEvent(ev);
+            // document.querySelector('#right').click();
+            // jzz_out.noteOn("closed hi-hat");
+            // beats_correct("right");
         }
     });
 
@@ -396,6 +456,14 @@ window.onload = () => {
     document.querySelector('#bpm').addEventListener('change',function(){
         if(this.value == "") BPM = 70;
         else BPM = parseInt(this.value);
+    });
+    document.querySelector('#game').addEventListener('click',function(){
+        this.style.display = "none";
+        document.querySelector('#paperwrap').style.display = "";
+    });
+    document.querySelector('#paperwrap').addEventListener('click',function(){
+        this.style.display = "none";
+        document.querySelector('#game').style.display = "";
     });
 }
 
@@ -440,13 +508,15 @@ function beats2arr(in_beats, direction="left") {
     note = "A";
     if (direction == "left") note="C,";
 
+    let sum = num;
     for(let i=1;i<in_beats.length;i++) {
         gap = in_beats[i]-in_beats[i-1];
         num = Math.round(gap/((60000/BPM)/4));
 
         beat_arr.push(note + num + "/");
+        sum += num;
     }
-    beat_arr.push(note + "/");
+    beat_arr.push(note + (measure-sum) + "/");
 
     split_beats(beat_arr);
 
@@ -502,6 +572,30 @@ stroke: red;
                     <div id="paperwrap">
                         <div id="paper_gold"></div>
                         <div id="paper"></div>
+                    </div>
+                    <div id="game" class="row" style="height:90vh;display:none;overflow:hidden;">
+                        <div class="col">
+                            <button id="left_sel0" class="btn btn-warning" style="width:100%;height:10vh;/*margin-top:80vh;*/"></button>
+                            <button id="left_sel1" class="btn btn-warning" style="width:100%;height:10vh;"></button>
+                            <button id="left_sel2" class="btn btn-warning" style="width:100%;height:10vh;"></button>
+                            <button id="left_sel3" class="btn btn-warning" style="width:100%;height:10vh;"></button>
+                            <button id="left_sel4" class="btn btn-warning" style="width:100%;height:10vh;"></button>
+                            <button id="left_sel5" class="btn btn-warning" style="width:100%;height:10vh;"></button>
+                            <button id="left_sel6" class="btn btn-warning" style="width:100%;height:10vh;"></button>
+                            <button id="left_sel7" class="btn btn-warning" style="width:100%;height:10vh;"></button>
+                            <button id="left_sel" class="btn btn-outline-warning" style="width:100%;height:10vh;/*margin-top:80vh;*/"></button>
+                        </div>
+                        <div class="col">
+                            <button id="right_sel0" class="btn btn-info" style="width:100%;height:10vh;"></button>
+                            <button id="right_sel1" class="btn btn-info" style="width:100%;height:10vh;"></button>
+                            <button id="right_sel2" class="btn btn-info" style="width:100%;height:10vh;"></button>
+                            <button id="right_sel3" class="btn btn-info" style="width:100%;height:10vh;"></button>
+                            <button id="right_sel4" class="btn btn-info" style="width:100%;height:10vh;"></button>
+                            <button id="right_sel5" class="btn btn-info" style="width:100%;height:10vh;"></button>
+                            <button id="right_sel6" class="btn btn-info" style="width:100%;height:10vh;"></button>
+                            <button id="right_sel7" class="btn btn-info" style="width:100%;height:10vh;"></button>
+                            <button id="right_sel" class="btn btn-outline-info" style="width:100%;height:10vh;"></button>
+                        </div>
                     </div>
                 </div>
                 <div class="col">
