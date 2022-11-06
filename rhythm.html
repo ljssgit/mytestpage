@@ -22,7 +22,7 @@
 <script src="./js/class.js"></script>
 <!-- <script src="./js/midictrl_score.js"></script> -->
 <script>
-VERSION = 0.04;
+VERSION = 0.05;
 BPM = 70;
 DELAY = 170;
 TOP = 4;
@@ -518,7 +518,7 @@ function beats2arr(in_beats, direction="left") {
     }
     beat_arr.push(note + (measure-sum) + "/");
 
-    split_beats(beat_arr);
+    //split_beats(beat_arr);
 
     return beat_arr;
 }
