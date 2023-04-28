@@ -38,7 +38,7 @@
 
 		navigator.mediaDevices.getUserMedia({ audio: true })
 			.then(function(stream) {
-				let audioContext = new AudioContext({sampleRate: 44100});
+				let audioContext = new AudioContext({sampleRate: 48000});
 				let source = audioContext.createMediaStreamSource(stream);
 				let processor = audioContext.createScriptProcessor(4096, 1, 1);
 
