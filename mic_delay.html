@@ -13,7 +13,7 @@
 	<button onclick="stopDelay()">Stop Delay</button>
 	<script>
 		// Audio Context 생성
-		const audioContext = new AudioContext();
+		const audioContext = new AudioContext({sampleRate: 44100});
 
 		// MediaStream Audio Source Node 생성
 		let sourceNode;
