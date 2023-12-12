@@ -84,7 +84,7 @@ class Chord {
                 else if (add_name == "7sus4"    )   result = result.concat([(num+5)%12, (num+7)%12, (num+10)%12]);
                 else if (add_name == "9sus4"    )   result = result.concat([(num+2)%12, (num+5)%12, (num+10)%12]);  //5음생략
                 else if (add_name == "mM7"      )   result = result.concat([(num+3)%12, (num+7)%12, (num+11)%12]);
-                else if (add_name == "6"        )   result = result.concat([(num+4)%12, (num+7)%12, (num+11)%12]);
+                else if (add_name == "6"        )   result = result.concat([(num+4)%12, (num+7)%12, (num+ 9)%12]);
                 else if (add_name == "m6"       )   result = result.concat([(num+3)%12, (num+7)%12, (num+ 9)%12]);
                 else if (add_name == "dim7"     )   result = result.concat([(num+3)%12, (num+6)%12, (num+ 9)%12]);
                 else if (add_name == "m7(b5)"   )   result = result.concat([(num+3)%12, (num+6)%12, (num+10)%12]);
