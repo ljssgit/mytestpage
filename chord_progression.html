@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+<link rel="shortcut icon" href="#">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-input-kbd"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-synth-tiny"></script>
+<script src="https://cdn.jsdelivr.net/npm/jzz-midi-gm"></script>
+<!-- <script src="./import/abcjs-basic-min.js" type="text/javascript"></script> -->
+<script src="./import/abcjs-basic.js"></script>
+<!-- <script src="./import/abcjs-basic-min-v6.4.0.js"></script> -->
+<!-- <script src="./import/abcjs-plugin-min-v6.4.0.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.0/dist/abcjs-basic-min.js" type="text/javascript"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.0/dist/abcjs-plugin-min.js" type="text/javascript"></script> -->
+<!-- https://www.abcjs.net/abcjs-basic-min.js -->
+<!-- <script src="./import/abcjs-plugin-min.js"></script> -->
+<script src="./import/JZZ.synth.MIDIjs.js"></script>
+<script src="./import/MIDI.js"></script>
+<script src="./settings.js"></script>
+<script src="./js/class.js"></script>
+<script src="./js/midictrl_cp.js"></script>
+<script>
+VERSION = 1.16;
+BPM = 100;
+major_scale_notes = [0, 2, 4, 5, 7, 9, 11];
+chord_type = [
+    ["", "add2", "M7", "M9"],   // I
+    ["m", "m7", "m9", "m11"],   // II
+    ["m", "m7", "m11"],         // III
+    ["", "add2", "M7", "M9"],   // IV
+    ["", "add2", "7"],          // V (all tension is available)
+    ["m", "m7", "m9", "m11"],   // VI
+    ["m7(b5)"],                 // VII 
+];
+chord_progress = [
+    [["I", "I", "II", "V"], ["I", "I", "2", "5"]]
+];
+
+// 특수문자 ♭♯
+
+function CursorControl(rootSelector) {
+    var self = this;
+
+    // This demonstrates two methods of indicating where the music is.
+    // 1) An element is created that is moved along for each note.
+    // 2) The currently being played note is given a class so that it can be transformed.
+    self.cursor = null; // This is the svg element that will move with the music.
+    self.rootSelector = rootSelector; // This is the same selector as the renderAbc call uses.
+
+    self.onStart = function() {
+        // This is called when the timer starts so we know the svg has been drawn by now.
+        // Create the cursor and add it to the sheet music's svg.
+        var svg = document.querySelector(self.rootSelector + " svg");
+        self.cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        self.cursor.setAttribute("class", "abcjs-cursor");
+        self.cursor.setAttributeNS(null, 'x1', 0);
+        self.cursor.setAttributeNS(null, 'y1', 0);
+        self.cursor.setAttributeNS(null, 'x2', 0);
+        self.cursor.setAttributeNS(null, 'y2', 0);
+        svg.appendChild(self.cursor);
+        start_time = Date.now();
+    };
+
+    self.removeSelection = function() {
+        // Unselect any previously selected notes.
+        var lastSelection = document.querySelectorAll(self.rootSelector + " .abcjs-highlight");
+        for (var k = 0; k < lastSelection.length; k++)
+            lastSelection[k].classList.remove("abcjs-highlight");
+    };
+
+    self.onEvent = async function(ev) {
+        // This is called every time a note or a rest is reached and contains the coordinates of it.
+        if (ev.measureStart && ev.left === null)
+            return; // this was the second part of a tie across a measure line. Just ignore it.
+
+        self.removeSelection();
+
+        // jzz_out = await JZZ().or('Cannot start MIDI engine!')
+        //             .openMidiOut().or('Cannot open MIDI Out port!')
+        //             .ch(9).or('Cannot open MIDI Out channel!');
+
+        // Select the currently selected notes.
+        for (var i = 0; i < ev.elements.length; i++ ) {
+            var note = ev.elements[i];
+            for (var j = 0; j < note.length; j++) {
+                note[j].classList.add("abcjs-highlight");
+
+                // if (drum_sound_on) {
+                //     cn = note[j].childNodes;
+                //     for(var k=0;k<cn.length;k++) {
+                //         if (cn[k].getAttribute("data-name")=="A") {
+                //             if (beats.right_mask[beats.right_cnt])
+                //                 jzz_out.noteOn("closed hi-hat")//.and(console.log(Date.now() - start_time));
+                //             beats.right_cnt += 1;
+                //         }
+                //         else if (cn[k].getAttribute("data-name")=="C,") {
+                //             if (beats.left_mask[beats.left_cnt])
+                //                 //jzz_out.noteOn("bass drum 1")//.and(console.log(Date.now() - start_time));
+                //                 jzz_out.noteOn("low floor tom");
+                //             beats.left_cnt += 1;
+                //         }
+                //     }
+                // }
+            }
+        }
+
+        // Move the cursor to the location of the current note.
+        if (self.cursor) {
+            self.cursor.setAttribute("x1", ev.left - 2);
+            self.cursor.setAttribute("x2", ev.left - 2);
+            self.cursor.setAttribute("y1", ev.top);
+            self.cursor.setAttribute("y2", ev.top + ev.height);
+        }
+    };
+    self.onFinished = function() {
+        self.removeSelection();
+        if (self.cursor) {
+            self.cursor.setAttribute("x1", 0);
+            self.cursor.setAttribute("x2", 0);
+            self.cursor.setAttribute("y1", 0);
+            self.cursor.setAttribute("y2", 0);
+        }
+        start_time = null;
+    };
+}
+
+function init_setting() {
+    console.log("Getting Strated...");
+}
+
+window.onload = () => {
+    v = document.getElementById('version')
+    v.innerHTML = "VERSION : "+VERSION;
+    init_setting();
+    MIDICtrl.init();
+    //ABCJS.renderAbc("paper", "X:1\nK:C\n D8|\n", {staffwidth: 80,});
+    // ABCJS.renderAbc("paper_gold", "X:1\nK:C\n", {staffwidth: 80,});
+    render_str = "X:1\nM:C\nK:C treble\n";
+    render_str += "z2 z2 z2 z2|";
+    render_str += '"Cadd2"';
+    render_str += rand_note_gen() + "2";
+    render_str += '"Dm7"';
+    render_str += rand_note_gen() + "2";
+    render_str += '"Em11"';
+    render_str += rand_note_gen() + "2";
+    render_str += '"FM7"';
+    render_str += rand_note_gen() + "2";
+    render_str += "|\n";
+    abc_obj = ABCJS.renderAbc("paper_gold", render_str, {staffwidth: 300,});
+
+    document.querySelector('#play_btn').addEventListener('click',function(){
+        // JZZ().openMidiOut().ch(1).program('Taiko Drum').noteOn('C#6')
+        //     .wait(200).noteOff('C#6').ch(9).noteOn('cowbell').wait(200).noteOff('cowbell');
+        
+        //JZZ().openMidiOut().ch(9).wait(200).noteOn(drum_sound)
+
+        drum_sound = "closed hi-hat";
+        JZZ().openMidiOut().ch(9).wait(1000*60/BPM).noteOn(drum_sound)
+            .wait(1000*60/BPM).noteOn(drum_sound)
+            .wait(1000*60/BPM).noteOn(drum_sound)
+            .wait(1000*60/BPM).noteOn("open hi-hat");
+
+        // let timingCallbacks = new ABCJS.TimingCallbacks(abc_obj[0], {
+        //     qpm: BPM,
+        //     extraMeasuresAtBeginning:0,
+        //     lineEndAnticipation:500,
+        //     beatSubdivisions:4,
+        //     // beatCallback: function() {},
+        //     eventCallback: function(ev) {
+        //         console.log(ev.elements)
+        //     },
+        //     // lineEndCallback: function() {}
+        // });
+        // timingCallbacks.start();
+        
+        var cursorControl = new CursorControl("#paper_gold");
+
+        cursorControl.onStart();
+        var timingCallbacks = new ABCJS.TimingCallbacks(abc_obj[0], {
+            eventCallback: function(ev) {
+                if (ev) cursorControl.onEvent(ev);
+                else    cursorControl.onFinished();
+            },
+            qpm: BPM,
+            // extraMeasuresAtBeginning:1,
+        });
+        setTimeout(() => timingCallbacks.start(), 1000*60/BPM);
+
+    });
+}
+
+function rand_note_gen() {
+    note = ["A", "B", "C", "D", "E", "F", "G", "a", "b", "c", "d", "e", "f", "g"];
+    idx = parseInt(Math.random() * note.length);
+    return note[idx];
+}
+</script>
+
+<style>
+#paperwrap {
+    position:absolute;
+    top: 45%;
+    transform: translateY(-50%);
+    width: 400px;/*20vw;*/
+    left:10vw;
+    border: 1px solid black;
+    /* height: 10vmin; */
+}
+#piano {
+    /* display:grid;
+    place-content:center; */
+
+    /* display:flex;
+    justify-content: center;
+    align-items: center; */
+   
+    position:absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    
+    
+    /* left: 25%; */
+    /* transform: translateX(-50%); */
+}
+.abcjs-highlight {
+fill: #0a9ecc;
+}
+.abcjs-cursor {
+stroke: red;
+}
+</style>
+</head>
+<body>
+    <div id="paperwrap">
+        <div id="paper_gold"></div>
+        <!-- <div id="paper"></div> -->
+    </div>
+    <div style="position:absolute;left:0;top:0;" id="version"></div>
+    <div style="position:absolute;left:0;top:20px;" id="debug"></div>
+    <br/>
+    <div class="input-group mb-3">
+        <span class="input-group-text">MIDI In</span>
+        <select id="selectmidiin" class="form-select"></select>
+        <span class="input-group-text">MIDI Out</span>
+        <select id="selectmidiout" class="form-select"></select>
+    </div>
+    <button type="button" id="play_btn" class="btn btn-primary">start</button>
+    <div id="piano"></div>
+</body>
+</html>
