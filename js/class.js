@@ -39,6 +39,14 @@ class Note {
 
         return num_list;
     }
+
+    static key_calc(name, num) {
+        let note_num = Note.name2num(name);
+        let type = 2;
+        if (name.length == 1 || name[1] == "#") type=1;
+        let result = Note.num2name((note_num + num) % Note.names.length, type);
+        return result;
+    }
 }
 
 class Chord {
