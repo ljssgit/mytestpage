@@ -12,7 +12,7 @@ class GlobalVar {
 Element.prototype.setAttributes = function(obj){ for(var prop in obj) this.setAttribute(prop, obj[prop]) };
 
 class ChordProgress {
-    static chord_progress = [
+    static data = [
         [
             ["I", "-", "-", "-"],
             ["V/3", "-", "-", "-"],

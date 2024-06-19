@@ -24,10 +24,11 @@
 <script src="./import/MIDI.js"></script>
 <script src="./settings.js"></script>
 <script src="./js/class.js"></script>
+<script src="./js/utils.js"></script>
 <script src="./js/midictrl_cp.js"></script>
 <script>
 VERSION = 1.16;
-BPM = 100;
+BPM = 60;
 major_scale_notes = [0, 2, 4, 5, 7, 9, 11];
 chord_type = [
     ["", "add2", "sus4", "M7", "M9"],   // I
@@ -137,19 +138,8 @@ window.onload = () => {
     MIDICtrl.init();
     //ABCJS.renderAbc("paper", "X:1\nK:C\n D8|\n", {staffwidth: 80,});
     // ABCJS.renderAbc("paper_gold", "X:1\nK:C\n", {staffwidth: 80,});
-    render_str = "X:1\nM:C\nK:C treble\n";
-    render_str += "z2 z2 z2 z2|";
-    render_str += '"Cadd2"';
-    render_str += rand_note_gen() + "2";
-    render_str += '"Dm7"';
-    render_str += rand_note_gen() + "2";
-    render_str += '"Em11"';
-    render_str += rand_note_gen() + "2";
-    render_str += '"FM7"';
-    render_str += rand_note_gen() + "2";
-    render_str += "|\n";
-    abc_obj = ABCJS.renderAbc("paper_gold", render_str, {staffwidth: 300,});
 
+    document.querySelector('#shuffle_btn').addEventListener('click',function(){rand_render_data(ChordProgress.data)});
     document.querySelector('#play_btn').addEventListener('click',function(){
         // JZZ().openMidiOut().ch(1).program('Taiko Drum').noteOn('C#6')
         //     .wait(200).noteOff('C#6').ch(9).noteOn('cowbell').wait(200).noteOff('cowbell');
@@ -186,17 +176,44 @@ window.onload = () => {
             qpm: BPM,
             // extraMeasuresAtBeginning:1,
         });
-        setTimeout(() => timingCallbacks.start(), 1000*60/BPM);
-
+        setTimeout(() => timingCallbacks.start(), 5*(1000*60/BPM));
     });
 
-    console.log(key_set(["IIm7", "-", "V7sus4", "-"], "B"));
+    rand_render_data(ChordProgress.data);
+}
+
+function rand_render_data(data) {
+    key = get_rand_item(Note.flat_names);
+    roman_chord_data = get_rand_item(data);
+    chord_data = [];
+    roman_chord_data.forEach(measure => {
+        chord_data.push(key_set(measure, key));
+    });
+    render_chords(chord_data, key);
+}
+
+function render_chords(chord_arr, key) {
+    render_str = "X:1\nT:Chord Progression\nM:C\nL:1/8\nK:"+key+" treble style=rhythm\n";    //M:4/4
+    // render_str += "z2 z2 z2 z2|";
+    // render_str += rand_note_gen() + "2";
+
+    for(let i=0;i<chord_arr.length;i++) {
+        if (i >= 4 && i % 4 == 0) render_str += "\n";
+        for(let j=0;j<chord_arr[i].length;j++) {
+            if (chord_arr[i][j] != "-")
+                render_str += '"'+chord_arr[i][j]+'" ';
+            render_str += "B0 ";
+        }
+        render_str += "|";
+    }
+    render_str += "|\n";
+    console.log(render_str)
+    abc_obj = ABCJS.renderAbc("paper_gold", render_str, {staffwidth: 750,});
+
 }
 
 function rand_note_gen() {
-    note = ["A", "B", "C", "D", "E", "F", "G", "a", "b", "c", "d", "e", "f", "g"];
-    idx = parseInt(Math.random() * note.length);
-    return note[idx];
+    return get_rand_item(["A", "B", "C", "D", "E", "F", "G", "a", "b", "c", "d", "e", "f", "g"]);
 }
 
 function roman2num(roman) {
@@ -211,7 +228,6 @@ function roman2num(roman) {
 }
 
 function key_set(arr, key="C") {
-    console.log(key);
     arr_key_setted = [];
     for (i=0;i<arr.length;i++) {
         if (arr[i]=="-"){
@@ -219,14 +235,17 @@ function key_set(arr, key="C") {
             continue;
         }
         roman = "";
-        for (j=0;j<3;j++) {
+        for (j=0;j<4;j++) {
+            if (j==0 && arr[i][j] == "b") continue;
             if (arr[i][j] != "I" && arr[i][j] != "V") break;
             roman += arr[i][j];
         }
-        num = roman2num(roman);
-        console.log(num);
-        note = Note.key_calc(key, major_scale_notes[num-1]);
-        console.log(note);
+        add_num = major_scale_notes[roman2num(roman)-1];
+        if (arr[i][0] == "b") {
+            add_num--;
+            roman = "b"+roman;
+        }
+        note = Note.key_calc(key, add_num);
         arr_key_setted.push(arr[i].replace(roman,note));
     }
     return arr_key_setted;
@@ -238,7 +257,7 @@ function key_set(arr, key="C") {
     position:absolute;
     top: 45%;
     transform: translateY(-50%);
-    width: 400px;/*20vw;*/
+    width: 800px;/*20vw;*/
     left:10vw;
     border: 1px solid black;
     /* height: 10vmin; */
@@ -283,6 +302,7 @@ stroke: red;
         <select id="selectmidiout" class="form-select"></select>
     </div>
     <button type="button" id="play_btn" class="btn btn-primary">start</button>
+    <button type="button" id="shuffle_btn" class="btn btn-primary">shuffle</button>
     <div id="piano"></div>
 </body>
 </html>
