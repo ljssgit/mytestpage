@@ -153,11 +153,15 @@ class Chord {
 
     // num -1:random, -2:random(no default inversion), >0:inversion change num
     static change_inversion(chordtones, inv_settings={num:0, ranges:["F3", "F3"], root_inv:true}) {
+        console.log(inv_settings)
         let num = inv_settings.num;
         let ranges = inv_settings.ranges;
         let root_inv = inv_settings.root_inv;
         let root = undefined;
-        if (!root_inv && chordtones.length > 3) root = chordtones.splice(0,1);
+        if (!root_inv) {
+            if (chordtones.length > 3) root = chordtones.splice(0,1);
+            else if (chordtones.length == 3) root = [chordtones[0]];
+        }
         console.log(MIDI.keyToNote[ranges[1]]-MIDI.keyToNote[ranges[0]]);
         if(MIDI.keyToNote[ranges[1]]-MIDI.keyToNote[ranges[0]] < 11) {
             if (num<0) num = (1 + parseInt(Math.random()*(chordtones.length-num-1))) % chordtones.length;
@@ -188,6 +192,7 @@ class Chord {
 
         num = num%chordtones.length;
         if (!root_inv && typeof root != "undefined") chordtones.splice(0,0,root)
+        console.log(chordtones)
 
         return num;
     }
